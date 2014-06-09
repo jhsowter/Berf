@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30501.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BerfWeb", "BerfWeb\BerfWeb.csproj", "{A05A3A0B-1F68-446C-BDC5-EF62EA921419}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BerfWeb.UnitTest", "BerfWeb.UnitTest\BerfWeb.UnitTest.csproj", "{81768890-CBA6-4D20-B4CC-31B11041EB19}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Berf", "Berf\Berf.fsproj", "{39E317F7-55CE-4C2F-A98B-AEA44ECFA6B3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sql", "Sql", "{DA5A2254-3893-4243-82DD-25FB6B80D34D}"
+	ProjectSection(SolutionItems) = preProject
+		Berf.sql = Berf.sql
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A05A3A0B-1F68-446C-BDC5-EF62EA921419}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A05A3A0B-1F68-446C-BDC5-EF62EA921419}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A05A3A0B-1F68-446C-BDC5-EF62EA921419}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A05A3A0B-1F68-446C-BDC5-EF62EA921419}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81768890-CBA6-4D20-B4CC-31B11041EB19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81768890-CBA6-4D20-B4CC-31B11041EB19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81768890-CBA6-4D20-B4CC-31B11041EB19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81768890-CBA6-4D20-B4CC-31B11041EB19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39E317F7-55CE-4C2F-A98B-AEA44ECFA6B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39E317F7-55CE-4C2F-A98B-AEA44ECFA6B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39E317F7-55CE-4C2F-A98B-AEA44ECFA6B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39E317F7-55CE-4C2F-A98B-AEA44ECFA6B3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
