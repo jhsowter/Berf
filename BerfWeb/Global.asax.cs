@@ -16,7 +16,7 @@
         protected void Application_Start()
         {
 
-            //GlobalFilters.Filters.Add(new BerfStopwatchAttribute());
+            GlobalFilters.Filters.Add(new BerfStopwatchAttribute());
 
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);

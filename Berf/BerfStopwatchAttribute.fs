@@ -31,9 +31,9 @@ type BerfStopwatchAttribute()  =
 
         _end <- DateTime.UtcNow
 
-        let sigStringStart = "X-Stopwatch-ActionStart";
-        let sigStringEnd = "X-Stopwatch-ActionEnd";
-        let sigStringDuration = "X-Stopwatch-ActionDuration";
+        let sigStringStart = "XStopwatchActionStart";
+        let sigStringEnd = "XStopwatchActionEnd";
+        let sigStringDuration = "XStopwatchActionDuration";
 
         let httpContext = filterContext.HttpContext
         let response = httpContext.Response
@@ -52,22 +52,22 @@ type BerfStopwatchAttribute()  =
 
         let contentType = test hds "Content-Type"
 
-        //var xRequestWith = request.Headers["X-Requested-With"] ?? "";
+
         let elapsed = _stopwatch.Elapsed.ToString();
+
         let elapsedMillis = _stopwatch.ElapsedMilliseconds;
         
         response.AddHeader(sigStringDuration, elapsedMillis.ToString());
         
-        let shouldX = contentType.Contains("application/json");
+        let isAjaxCall = contentType.Contains("application/json");
 
-        if shouldX = false then 
-            response.Write (String.Format( "<!-- {0}: {1} -->" , (sigStringDuration.ToString()) , (elapsedMillis.ToString()) ))
+        if isAjaxCall = false then 
 
             let startt = _start.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffK")
             let endt = _end.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffK")
 
-            response.Write  (String.Format( @"<script> {0}=""{1}"" ; </script>", (sigStringStart)    , (startt)        ))
-            response.Write  (String.Format( @"<script> {0}=""{1}"" ; </script>", (sigStringEnd)      , (endt)          ))
-            response.Write  (String.Format(  "<script> {0}={1}  ;  </script>"  , (sigStringDuration) , (elapsedMillis) ))
+            response.Write  (String.Format( @"<script> var {0} = ""{1}"" ; </script>", (sigStringStart)  , (startt)      ))
+            response.Write  (String.Format( @"<script> var {0} = ""{1}"" ; </script>", (sigStringEnd)    , (endt)        ))
+            response.Write  (String.Format(  ""  ))
         ()
 
