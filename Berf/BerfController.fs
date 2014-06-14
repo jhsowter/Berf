@@ -15,30 +15,17 @@ open System.Configuration
 open System.Diagnostics
 open System.Web
 open System.Web.Mvc
+open System.Reflection
 
-type dbSchema = SqlDataConnection< "data source=.\SQLSERVER2012 ; Initial Catalog=Berf ; Integrated Security = SSPI;" >
+
+type dbSchema = SqlDataConnection< "data source=.\SQLSERVER2012;Initial Catalog=Berf;Integrated Security=SSPI;" >
+
+type internal EntityConnection = SqlEntityConnection< "data source=.\SQLSERVER2012;Initial Catalog=Berf;Integrated Security=SSPI;" >
 
 type BerfController() =
     inherit Controller()
 
-    member this.Index() =
-        this.Json({ IsOK = true
-                    Message = "OK" }, JsonRequestBehavior.AllowGet)
-
-    member this.log (model : PerformanceModel) =
-        let db = dbSchema.GetDataContext()
-        db.Connection.ConnectionString <- "data source=.\SQLSERVER2012 ; Initial Catalog=Berf ; Integrated Security = SSPI;"
-        try
-            let cmd = this.getCmd model
-            // insert into db
-            db.DataContext.ExecuteCommand(cmd) |> ignore
-        with exn ->
-            let message = exn.Message
-            printfn "Exception:\n%s" exn.Message
-        this.Json({ IsOK = true
-                    Message = "OK" }, JsonRequestBehavior.AllowGet)
-
-    member this.getCmd (model : PerformanceModel) =
+    let getOther (httpContext : HttpContextBase) : Other =
         let mutable Server = String.Empty
         let mutable Browser = String.Empty
         let mutable BrowserVersion = String.Empty
@@ -57,7 +44,6 @@ type BerfController() =
         ClientSigVer <- "-"
         controller <- "-"
         action <- "-"
-        let httpContext = this.HttpContext
         let response = httpContext.Response
         let request = httpContext.Request
         let headers = request.Headers
@@ -80,74 +66,150 @@ type BerfController() =
             else String.Empty
 
         try
-            ClientSigVer <- this.GetType().Assembly.GetName().Version.ToString()
+            ClientSigVer <- typedefof<BerfController>.Assembly.GetName().Version.ToString()
         with exn -> ignore()
-
         try
             Server <- getValueFromMap serverVariablesMap "SERVER_NAME"
         with exn -> ignore()
-        
         try
             IP <- getValueFromMap serverVariablesMap "LOCAL_ADDR"
         with exn -> ignore()
-        
         try
             AuthUser <- getValueFromMap serverVariablesMap "AUTH_USER"
         with exn -> ignore()
-        
         try
             LogonUser <- getValueFromMap serverVariablesMap "LOGON_USER"
         with exn -> ignore()
-        
         try
             Browser <- HttpContext.Current.Request.Browser.Browser
         with exn -> ignore()
-        
         try
             BrowserVersion <- HttpContext.Current.Request.Browser.Version
         with exn -> ignore()
-        
-        let cmd =
-            String.Format
-                (@"insert into Berf (
-                    BerfId
-                    ,navigationStart
-                    ,unloadEventStart
-                    ,unloadEventEnd
-                    ,redirectStart
-                    ,redirectEnd
-                    ,fetchStart
-                    ,domainLookupStart
-                    ,domainLookupEnd
-                    ,connectStart
-                    ,connectEnd
-                    ,secureConnectionStart
-                    ,requestStart
-                    ,responseStart
-                    ,responseEnd
-                    ,domLoading
-                    ,domInteractive
-                    ,domContentLoadedEventStart
-                    ,domContentLoadedEventEnd
-                    ,domComplete
-                    ,loadEventStart
-                    ,loadEventEnd
-                    , ClientSigVer
-                    , Server
-                    , IP
-                    , UserId
-                    , Browser
-                    , BrowserVersion
-                    , BrowserEventDt
-                    , Url
-                    ) values ('{0}',{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},'{22}','{23}','{24}','{25}','{26}','{27}','{28}','{29}' );",
-                 Guid.NewGuid(), model.timing.navigationStart, model.timing.unloadEventStart,
-                 model.timing.unloadEventEnd, model.timing.redirectStart, model.timing.redirectEnd,
-                 model.timing.fetchStart, model.timing.domainLookupStart, model.timing.domainLookupEnd,
-                 model.timing.connectStart, model.timing.connectEnd, model.timing.secureConnectionStart,
-                 model.timing.requestStart, model.timing.responseStart, model.timing.responseEnd,
-                 model.timing.domLoading, model.timing.domInteractive, model.timing.domContentLoadedEventStart,
-                 model.timing.domContentLoadedEventEnd, model.timing.domComplete, model.timing.loadEventStart,
-                 model.timing.loadEventEnd, ClientSigVer, Server, IP, AuthUser + LogonUser, Browser, BrowserVersion,
-                 model.browserEventDt, model.url)
-        cmd
+
+        let ret =
+            { Other.Server = Server
+              Browser = Browser
+              BrowserVersion = BrowserVersion
+              controller = controller
+              action = action
+              IP = IP
+              AuthUser = AuthUser
+              LogonUser = LogonUser
+              ClientSigVer = ClientSigVer }
+        ret
+
+    // A helper function.
+    let nullable value = new System.Nullable<_>(value)
+
+    let toBerfTimer_1 (berfPacket : BerfPerfPacket) (other : Other) : EntityConnection.ServiceTypes.BerfTimer =
+        let berfTimer =
+            new EntityConnection.ServiceTypes.BerfTimer(BerfTimerId = Guid.NewGuid(),
+                                                        BerfSessionId = berfPacket.berfSessionId,
+                                                        EventDt = nullable DateTime.UtcNow, 
+                                                        BerfType = nullable 1,
+
+                                                        SigTestId = String.Empty,
+                                                        SigId = berfPacket.url, 
+
+                                                        ControllerAction = berfPacket.berfSession.area + berfPacket.berfSession.controller  + berfPacket.berfSession.action ,
+
+                                                        ActionTime = nullable berfPacket.berfSession.actionTime,
+                                                        ViewTime = nullable berfPacket.berfSession.viewTime,
+                                                       
+                                                        Count = nullable 1, 
+                                                        
+                                                        ServerEventDt = "", 
+                                                        BrowserEventDt = "",
+
+                                                        ClientSigVer = other.ClientSigVer,
+                                                        ClientSig = String.Empty,
+
+                                                        Server = other.Server,
+                                                        IP = other.IP, UserId = other.AuthUser, Browser = other.Browser,
+                                                        BrowserVersion = other.BrowserVersion, Url = other.ClientSigVer,
+                                                        navigationStart = berfPacket.timing.navigationStart,
+                                                        unloadEventStart = berfPacket.timing.unloadEventStart,
+                                                        unloadEventEnd = berfPacket.timing.unloadEventEnd,
+                                                        redirectStart = berfPacket.timing.redirectStart,
+                                                        redirectEnd = berfPacket.timing.redirectEnd,
+                                                        fetchStart = berfPacket.timing.fetchStart,
+                                                        domainLookupStart = berfPacket.timing.domainLookupStart,
+                                                        domainLookupEnd = berfPacket.timing.domainLookupEnd,
+                                                        connectStart = berfPacket.timing.connectStart,
+                                                        connectEnd = berfPacket.timing.connectEnd,
+                                                        secureConnectionStart = berfPacket.timing.secureConnectionStart,
+                                                        requestStart = berfPacket.timing.redirectStart,
+                                                        responseStart = berfPacket.timing.requestStart,
+                                                        responseEnd = berfPacket.timing.responseEnd,
+                                                        domLoading = berfPacket.timing.domLoading,
+                                                        domInteractive = berfPacket.timing.domInteractive,
+
+                                                        domContentLoadedEventStart = berfPacket.timing.domContentLoadedEventStart,
+
+                                                        domContentLoadedEventEnd = berfPacket.timing.domContentLoadedEventEnd,
+                                                        domComplete = berfPacket.timing.domComplete,
+                                                        loadEventStart = berfPacket.timing.loadEventStart,
+                                                        loadEventEnd = berfPacket.timing.loadEventEnd)
+        berfTimer
+
+    let getBerfTimers (berfPacket : BerfPerfPacket) (other : Other) : EntityConnection.ServiceTypes.BerfTimer list =
+        let list = List.empty<EntityConnection.ServiceTypes.BerfTimer>
+        // main timer
+        let berfTimer = toBerfTimer_1 berfPacket other
+        let mainTimerList = List.append list [ berfTimer ]
+        // child timer resources
+        let timingResources = List.ofArray berfPacket.timingResources
+
+        let toBerfTimer_2 (x : TimingResource) : EntityConnection.ServiceTypes.BerfTimer =
+            let ret =
+                new EntityConnection.ServiceTypes.BerfTimer(
+                    BerfTimerId = Guid.NewGuid(),
+                    BerfSessionId = berfPacket.berfSessionId,
+                    BerfType = nullable 2,
+                    EventDt = nullable DateTime.UtcNow, 
+                    SigTestId = String.Empty, 
+                    SigId = x.name, 
+                    ActionTime = nullable 0.0,
+                    ViewTime = nullable 0.0, 
+                    ControllerAction = berfPacket.url,
+                    Count = nullable 1, 
+                    ServerEventDt = "",
+                    BrowserEventDt = "", 
+                    ClientSig = String.Empty,
+                    ClientSigVer = other.ClientSigVer,
+                    Server = other.Server,
+                    IP = other.IP,
+                    UserId = other.AuthUser, Browser = other.Browser,
+                    BrowserVersion = other.BrowserVersion,
+                    Url = other.ClientSigVer, name = x.name,
+                    duration = x.duration
+                    )
+            ret
+
+        let timingResourcesList = timingResources |> List.map (fun x -> toBerfTimer_2 x)
+        let fullList = List.append mainTimerList timingResourcesList
+        fullList
+
+    member this.Index() =
+        this.Json({ IsOK = true
+                    Message = "OK" }, JsonRequestBehavior.AllowGet)
+
+    member this.log (model : BerfPerfPacket) =
+        let db = dbSchema.GetDataContext()
+        let cnString = "data source=.\SQLSERVER2012 ; Initial Catalog=Berf ; Integrated Security = SSPI;"
+        db.Connection.ConnectionString <- cnString
+        try
+            let other = getOther this.HttpContext
+            let context = EntityConnection.GetDataContext()
+            let fullContext = context.DataContext
+            let berfTimers = getBerfTimers model other
+            for i in berfTimers do
+                fullContext.AddObject("BerfTimer", i)
+            fullContext.CommandTimeout <- nullable 1000
+            fullContext.SaveChanges() |> printfn "Saved changes: %d object(s) modified."
+        with exn ->
+            let message = exn.Message
+            printfn "Exception:\n%s" exn.Message
+        this.Json({ IsOK = true
+                    Message = "OK" }, JsonRequestBehavior.AllowGet)
