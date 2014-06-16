@@ -31,9 +31,18 @@ create table BerfTimer
 	[UserId]						[varchar](100)	NULL default('-'),
 	[Browser]						[varchar](100)	NULL default('-'),
 	[BrowserVersion]				[varchar](100)	NULL default('-'),
+	[UserAgentString]				[varchar](600)	NULL default('-'),
+
+
 	[Server]						[varchar](100)	NULL default ('-'),
+
 	[UserScore]						[varchar](100)	NULL default('0'),
 	[UserScoreType]					[varchar](100)	NULL default ('0'),
+
+
+
+
+
 
 	--**************************************************
 	-- TimingResource
@@ -126,6 +135,16 @@ select * from BerfTimer ;
 //responseEnd: 1.7239245469830566
 //responseStart: 1.6406110861237808
 //startTime: 1.2089507635557943
+
+
+-- truncate table BerfTimer ; 
+go 
+
+select * from BerfTimer where BerfType = 1 order by EventDt , BerfType ;
+
+-- domLoading , LoadEventEnd
+select * from BerfTimer order by EventDt , BerfType;
+
 
 
 */

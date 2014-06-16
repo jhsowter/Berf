@@ -16,7 +16,7 @@ type BerfMeta =
       Message : string }
 
 [<CLIMutable>]
-type Other =
+type HttpSummary =
     { Server : String
       Browser : String
       BrowserVersion : String
@@ -25,7 +25,9 @@ type Other =
       IP : String
       AuthUser : String
       LogonUser : String
-      ClientSigVer : String }
+      ClientSigVer : String 
+      UserAgentString: String
+      }
 
 [<CLIMutable>]
 type Timing =
@@ -84,6 +86,7 @@ type TimingResource =
 //responseEnd                               : 1.7239245469830566
 //responseStart                         : 1.6406110861237808
 //startTime                                 : 1.2089507635557943
+
 [<CLIMutable>]
 type PerformanceNavigation =
     { ``type`` : int16
@@ -96,9 +99,9 @@ type BerfSession =
       serverEndDt : string
       area : string
       controller : string
-      action : string 
-      actionTime: float
-      viewTime: float
+      action : string
+      actionTime : float
+      viewTime : float 
       }
 
 [<CLIMutable>]
@@ -110,3 +113,4 @@ type BerfPerfPacket =
       navigation : PerformanceNavigation
       berfSession : BerfSession
       timingResources : TimingResource [] }
+
