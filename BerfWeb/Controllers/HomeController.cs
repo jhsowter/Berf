@@ -10,7 +10,6 @@ namespace BerfWeb.Controllers
     {
         public ActionResult Index()
         {
-            Thread.Sleep(1300);
             return View();
         }
 
