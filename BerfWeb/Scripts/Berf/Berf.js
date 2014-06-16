@@ -162,7 +162,8 @@ var Berf;
                 if (window.performance) {
                     // REFACTOR
                     //var endpoint = "/BerfWeb/Berf/log";
-                    var endpoint = "/Berf/log";
+                    //var endpoint = "/Berf/log";
+                    var endpoint = $("script[berf-url]").attr("berf-url");
                     var url = Berf.Util.urlSplit(window.location.toString());
 
                     var berfPerfPacket = this.getBerfData(berfSession);
