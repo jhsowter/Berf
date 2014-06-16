@@ -31,6 +31,7 @@ create table BerfTimer
 	[UserId]						[varchar](100)	NULL default('-'),
 	[Browser]						[varchar](100)	NULL default('-'),
 	[BrowserVersion]				[varchar](100)	NULL default('-'),
+	[UserAgent]						[varchar](200)	NULL default('-'),
 	[Server]						[varchar](100)	NULL default ('-'),
 	[UserScore]						[varchar](100)	NULL default('0'),
 	[UserScoreType]					[varchar](100)	NULL default ('0'),

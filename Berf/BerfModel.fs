@@ -25,7 +25,8 @@ type Other =
       IP : String
       AuthUser : String
       LogonUser : String
-      ClientSigVer : String }
+      ClientSigVer : String
+      UserAgent: String }
 
 [<CLIMutable>]
 type Timing =

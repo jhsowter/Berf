@@ -141,7 +141,7 @@ var Berf;
             var navigation = window.performance.navigation;
 
             // get other timing resources about this page
-            var resourceList = window.performance.getEntriesByType("resource");
+            var resourceList = window.performance.getEntriesByType ? window.performance.getEntriesByType("resource") : [];
             var timingResources = this.getTimingResources(resourceList);
 
             // REFACTOR
@@ -273,7 +273,7 @@ var berfLog = function () {
     var berf = eval("(" + berfDataJson + ')');
     console.log("berf.BerfSessionId <- " + berf.BerfSessionId);
 
-    var resourceList = window.performance.getEntriesByType("resource");
+    var resourceList = window.performance.getEntriesByType ? window.performance.getEntriesByType("resource") : [];
 
     for (var i = 0; i < resourceList.length; i++) {
         var res = resourceList[i];

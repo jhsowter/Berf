@@ -87,6 +87,8 @@ type BerfController() =
             BrowserVersion <- HttpContext.Current.Request.Browser.Version
         with exn -> ignore()
 
+        let uat = HttpContext.Current.Request.UserAgent
+
         let ret =
             { Other.Server = Server
               Browser = Browser
@@ -96,6 +98,7 @@ type BerfController() =
               IP = IP
               AuthUser = AuthUser
               LogonUser = LogonUser
+              UserAgent = uat
               ClientSigVer = ClientSigVer }
         ret
 
@@ -126,7 +129,11 @@ type BerfController() =
                                                         ClientSig = String.Empty,
 
                                                         Server = other.Server,
-                                                        IP = other.IP, UserId = other.AuthUser, Browser = other.Browser,
+                                                        IP = other.IP, 
+                                                        UserAgent = other.UserAgent, 
+                                                        
+                                                        UserId = other.AuthUser, 
+                                                        Browser = other.Browser,
                                                         BrowserVersion = other.BrowserVersion, Url = other.ClientSigVer,
                                                         navigationStart = berfPacket.timing.navigationStart,
                                                         unloadEventStart = berfPacket.timing.unloadEventStart,
@@ -159,7 +166,7 @@ type BerfController() =
         let berfTimer = toBerfTimer_1 berfPacket other
         let mainTimerList = List.append list [ berfTimer ]
         // child timer resources
-        let timingResources = List.ofArray berfPacket.timingResources
+        let timingResources = if berfPacket.timingResources = null then [] else List.ofArray berfPacket.timingResources
 
         let toBerfTimer_2 (x : TimingResource) : EntityConnection.ServiceTypes.BerfTimer =
             let ret =
@@ -199,17 +206,17 @@ type BerfController() =
         let db = dbSchema.GetDataContext()
         let cnString = "data source=.\SQLSERVER2012 ; Initial Catalog=Berf ; Integrated Security = SSPI;"
         db.Connection.ConnectionString <- cnString
-        try
-            let other = getOther this.HttpContext
-            let context = EntityConnection.GetDataContext()
-            let fullContext = context.DataContext
-            let berfTimers = getBerfTimers model other
-            for i in berfTimers do
-                fullContext.AddObject("BerfTimer", i)
-            fullContext.CommandTimeout <- nullable 1000
-            fullContext.SaveChanges() |> printfn "Saved changes: %d object(s) modified."
-        with exn ->
-            let message = exn.Message
-            printfn "Exception:\n%s" exn.Message
-        this.Json({ IsOK = true
-                    Message = "OK" }, JsonRequestBehavior.AllowGet)
+        let other = getOther this.HttpContext
+        let context = EntityConnection.GetDataContext()
+        let fullContext = context.DataContext
+        let berfTimers = getBerfTimers model other
+        for i in berfTimers do
+            fullContext.AddObject("BerfTimer", i)
+        fullContext.CommandTimeout <- nullable 1000
+        fullContext.SaveChanges() |> printfn "Saved changes: %d object(s) modified."
+
+        this.Json(
+        { 
+            IsOK = true 
+            Message = "OK" 
+        }, JsonRequestBehavior.AllowGet)

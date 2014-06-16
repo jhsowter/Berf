@@ -4,10 +4,13 @@
 
 namespace BerfWeb.Controllers
 {
+    using System.Threading;
+
     public class HomeController : Controller
     {
         public ActionResult Index()
         {
+            Thread.Sleep(1300);
             return View();
         }
 
