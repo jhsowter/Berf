@@ -17,9 +17,6 @@ open System.Runtime.Serialization.Json
 open System.Xml
 open System.Text
 
-
-
-
 type BerfStopwatchAttribute() =
     inherit ActionFilterAttribute()
 
@@ -32,7 +29,6 @@ type BerfStopwatchAttribute() =
     let mutable _actionStopwatch : Stopwatch = Stopwatch()
     let mutable _resultStopwatch : Stopwatch = Stopwatch()
 
-
     override u.OnActionExecuting(filterContext : ActionExecutingContext) =
 
         _actionStart <- DateTime.UtcNow
@@ -44,15 +40,14 @@ type BerfStopwatchAttribute() =
 
     override u.OnActionExecuted(filterContext : ActionExecutedContext) =
 
-        //let mutable _actionStopwatch : Stopwatch = Stopwatch()
-        //let mutable _resultStopwatch : Stopwatch = Stopwatch()
         _actionStopwatch.Stop()
-
 
         _actionEnd <- DateTime.UtcNow
         
+        ()
 
     override u.OnResultExecuting(filterContext : ResultExecutingContext) =
+
         _resultStart <- DateTime.UtcNow
 
         _resultStopwatch <- Stopwatch()
@@ -108,7 +103,6 @@ type BerfStopwatchAttribute() =
             let controllerName = getValueFrom filterContext.RouteData.Values  "controller" + "."  
             let actionName = getValueFrom filterContext.RouteData.Values  "action" + "."
 
-
             let berfSession =
                 { berfSessionId = berfSessionId.ToString()
                   serverStartDt = startt
@@ -129,45 +123,4 @@ type BerfStopwatchAttribute() =
             response.Cookies.Add(cookie)
 
         ()
-
-
-
-
-
-
-
-
-
-(*
-
-public void Init(HttpApplication context) {
-    context.BeginRequest += OnBeginRequest;
-    context.EndRequest += OnEndRequest;
-  }
-
-  void OnBeginRequest(object sender, System.EventArgs e) {
-    if (HttpContext.Current.Request.IsLocal 
-        && HttpContext.Current.IsDebuggingEnabled) {
-      var stopwatch = new Stopwatch();
-      HttpContext.Current.Items["Stopwatch"] = stopwatch;
-      stopwatch.Start();
-    }
-  }
-
-  void OnEndRequest(object sender, System.EventArgs e) {
-    if (HttpContext.Current.Request.IsLocal 
-        && HttpContext.Current.IsDebuggingEnabled) {
-      Stopwatch stopwatch = 
-        (Stopwatch)HttpContext.Current.Items["Stopwatch"];
-      stopwatch.Stop();
-
-      TimeSpan ts = stopwatch.Elapsed;
-      string elapsedTime = String.Format("{0}ms", ts.TotalMilliseconds);
-
-      HttpContext.Current.Response.Write("<p>" + elapsedTime + "</p>");
-    }
-  }
-*)
-
-
 
