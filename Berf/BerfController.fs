@@ -17,7 +17,6 @@ open System.Web
 open System.Web.Mvc
 open System.Reflection
 
-//type dbSchema = SqlDataConnection< "data source=.\SQLSERVER2012;Initial Catalog=Berf;Integrated Security=SSPI;" >
 type internal EntityConnection = SqlEntityConnection< "data source=.\SQLSERVER2012;Initial Catalog=Berf;Integrated Security=SSPI;" >
 
 type BerfController() =
@@ -90,14 +89,17 @@ type BerfController() =
           AuthUser = authUser
           LogonUser = logonUser
           ClientSigVer = clientSigVer
-          UserAgentString = userAgentString }
+          UserAgent = userAgentString }
 
     // helper
     let nullable value = new System.Nullable<_>(value)
 
-    let toBerfTimer_1 (berfPacket : BerfPerfPacket) (other : HttpSummary) : EntityConnection.ServiceTypes.BerfTimer =
+    let toBerfTimer_1 (berfPacket : BerfPerfPacket) (httpSummary : HttpSummary) : EntityConnection.ServiceTypes.BerfTimer =
+
         let berfTimer =
+
             new EntityConnection.ServiceTypes.BerfTimer(
+
                 BerfTimerId = Guid.NewGuid(),
                 BerfSessionId = berfPacket.berfSessionId,
                 EventDt = nullable DateTime.UtcNow, BerfType = nullable 1,
@@ -107,16 +109,20 @@ type BerfController() =
                                     + berfPacket.berfSession.action,
                 ActionTime = nullable berfPacket.berfSession.actionTime,
                 ViewTime = nullable berfPacket.berfSession.viewTime,
-                Count = nullable 1, ServerEventDt = "", BrowserEventDt = "",
-                ClientSigVer = other.ClientSigVer, ClientSig = String.Empty,
-                Server = other.Server, IP = other.IP, UserId = other.AuthUser,
-                Browser = other.Browser, BrowserVersion = other.BrowserVersion,
-                UserAgentString = other.UserAgentString,
-                Url = other.ClientSigVer,
-                                                        UserAgent = other.UserAgent, 
-                                                        
-                                                        UserId = other.AuthUser, 
-                                                        Browser = other.Browser,
+                Count = nullable 1, 
+                ServerEventDt = "", 
+                BrowserEventDt = "",
+                ClientSigVer = httpSummary.ClientSigVer, 
+                ClientSig = String.Empty,
+                Server = httpSummary.Server, 
+                IP = httpSummary.IP, 
+                UserId = httpSummary.AuthUser,
+                Browser = httpSummary.Browser, 
+                BrowserVersion = httpSummary.BrowserVersion,
+                Url = httpSummary.ClientSigVer,
+
+                UserAgent= httpSummary.UserAgent,
+
                 navigationStart = berfPacket.timing.navigationStart,
                 unloadEventStart = berfPacket.timing.unloadEventStart,
                 unloadEventEnd = berfPacket.timing.unloadEventEnd,
@@ -137,9 +143,10 @@ type BerfController() =
                 domContentLoadedEventEnd = berfPacket.timing.domContentLoadedEventEnd,
                 domComplete = berfPacket.timing.domComplete,
                 loadEventStart = berfPacket.timing.loadEventStart,
-                loadEventEnd = berfPacket.timing.loadEventEnd)
-        berfTimer
+                loadEventEnd = berfPacket.timing.loadEventEnd
+        )
 
+        berfTimer
 
 
     let getBerfTimers (berfPacket : BerfPerfPacket) (httpSummary : HttpSummary) : EntityConnection.ServiceTypes.BerfTimer list =
@@ -176,6 +183,8 @@ type BerfController() =
                     Browser = httpSummary.Browser,
                     BrowserVersion = httpSummary.BrowserVersion,
                     Url = httpSummary.ClientSigVer, 
+                    UserAgent= httpSummary.UserAgent,
+
                     connectEnd                = timingResource.connectEnd               ,
                     connectStart              = timingResource.connectStart             ,
                     domainLookupEnd           = timingResource.domainLookupEnd          ,
