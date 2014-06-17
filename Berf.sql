@@ -1,4 +1,10 @@
-﻿if exists (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'BerfTimer')
+﻿--create database Berf ; 
+go 
+
+use Berf ; 
+go 
+
+if exists (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'BerfTimer')
 begin
 	drop table BerfTimer
 end
@@ -31,18 +37,10 @@ create table BerfTimer
 	[UserId]						[varchar](100)	NULL default('-'),
 	[Browser]						[varchar](100)	NULL default('-'),
 	[BrowserVersion]				[varchar](100)	NULL default('-'),
-	[UserAgentString]				[varchar](600)	NULL default('-'),
-
-
+	[UserAgent]						[varchar](600)	NULL default('-'),
 	[Server]						[varchar](100)	NULL default ('-'),
-
 	[UserScore]						[varchar](100)	NULL default('0'),
 	[UserScoreType]					[varchar](100)	NULL default ('0'),
-
-
-
-
-
 
 	--**************************************************
 	-- TimingResource
@@ -143,8 +141,30 @@ go
 select * from BerfTimer where BerfType = 1 order by EventDt , BerfType ;
 
 -- domLoading , LoadEventEnd
-select * from BerfTimer order by EventDt , BerfType;
+
+
+-- truncate table BerfTimer ; 
+go 
+
+select * from BerfTimer where BerfType = 1 order by EventDt , BerfType ;
+
+select 
+	EventDt as 'A', SigID  as 'A' , ControllerAction , ActionTime as 'A', ViewTime as 'A', domLoading as 'Wire' , ( loadEventEnd - domLoading)  as 'Client' , 
+	 * 
+from BerfTimer where BerfType = 1 order by EventDt , BerfType ;
+
+
+
+select 
+	EventDt as 'A', SigID  as 'A' , ControllerAction , ActionTime as 'A', ViewTime as 'A', domLoading as 'Wire' , ( loadEventEnd - domLoading)  as 'Client' , duration as 'duration' 
+	, * 
+from BerfTimer where BerfType in (1,2)  order by EventDt , BerfType ;
+
+
 
 
 
 */
+
+select * from BerfTimer order by EventDt , BerfType , startTime
+
