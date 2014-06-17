@@ -113,10 +113,6 @@ type BerfController() =
                 Browser = other.Browser, BrowserVersion = other.BrowserVersion,
                 UserAgentString = other.UserAgentString,
                 Url = other.ClientSigVer,
-                                                        UserAgent = other.UserAgent, 
-                                                        
-                                                        UserId = other.AuthUser, 
-                                                        Browser = other.Browser,
                 navigationStart = berfPacket.timing.navigationStart,
                 unloadEventStart = berfPacket.timing.unloadEventStart,
                 unloadEventEnd = berfPacket.timing.unloadEventEnd,

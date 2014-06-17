@@ -1,6 +1,64 @@
 ﻿/// <reference path="../jquery.d.ts" />
 module Berf {
 
+    export class Navigation {
+        public static NOT_SET: number = -99.01;
+        navigationStart: number = Navigation.NOT_SET;
+        unloadEventStart: number;
+        unloadEventEnd: number;
+        redirectStart: number;
+        redirectEnd: number;
+        fetchStart: number;
+        domainLookupStart: number;
+        domainLookupEnd: number;
+        connectStart: number;
+        connectEnd: number;
+        secureConnectionStart: number;
+        requestStart: number;
+        responseStart: number;
+        responseEnd: number;
+        domLoading: number;
+        domInteractive: number;
+        domContentLoadedEventStart: number;
+        domContentLoadedEventEnd: number;
+        domComplete: number;
+        loadEventStart: number;
+        loadEventEnd: number;
+
+        constructor(nav: any) {
+            this.navigationStart = nav.navigationStart;
+            this.unloadEventStart = this.deltaFromStart(nav.unloadEventStart);
+            this.unloadEventEnd = this.deltaFromStart(nav.unloadEventEnd);
+            this.redirectStart = this.deltaFromStart(nav.redirectStart);
+            this.redirectEnd = this.deltaFromStart(nav.redirectEnd);
+            this.fetchStart = this.deltaFromStart(nav.fetchStart);
+            this.domainLookupStart = this.deltaFromStart(nav.domainLookupStart);
+            this.domainLookupEnd = this.deltaFromStart(nav.domainLookupEnd);
+            this.connectStart = this.deltaFromStart(nav.connectStart);
+            this.connectEnd = this.deltaFromStart(nav.connectEnd);
+            this.secureConnectionStart = this.deltaFromStart(nav.secureConnectionStart);
+            this.requestStart = this.deltaFromStart(nav.requestStart);
+            this.responseStart = this.deltaFromStart(nav.responseStart);
+            this.responseEnd = this.deltaFromStart(nav.responseEnd);
+            this.domLoading = this.deltaFromStart(nav.domLoading);
+            this.domInteractive = this.deltaFromStart(nav.domInteractive);
+            this.domContentLoadedEventStart = this.deltaFromStart(nav.domContentLoadedEventStart);
+            this.domContentLoadedEventEnd = this.deltaFromStart(nav.domContentLoadedEventEnd);
+            this.domComplete = this.deltaFromStart(nav.domComplete);
+            this.loadEventStart = this.deltaFromStart(nav.loadEventStart);
+            this.loadEventEnd = this.deltaFromStart(nav.loadEventEnd);
+        }
+
+        deltaFromStart(n: number) {
+            if (this.navigationStart === Navigation.NOT_SET) {throw "navigationStart is not set." };
+            return this.delta(this.navigationStart, n);
+        }
+
+        delta(tZero: number, n: number) {
+            return n === 0 ? 0 : n - tZero;
+        }
+    }
+
     export class BerfPage {
         url: string;
 
@@ -62,7 +120,7 @@ module Berf {
 
         public getTimingResources(resourceList: any) {
 
-            var ret = []; 
+            var ret = [];
 
             if (resourceList) {
 
@@ -140,7 +198,6 @@ module Berf {
             return ret;
         }
 
-
         public getBerfData(berfSession: any) {
             // REFACTOR
             var url = window.location.toString();
@@ -148,20 +205,20 @@ module Berf {
             var browserEventDt = (new Date()).toUTCString();
 
             var t = window.performance.timing;
-
-            var timing = this.getTiming(t.navigationStart, t.unloadEventStart, t.unloadEventEnd, t.redirectStart, t.redirectEnd, t.fetchStart, t.domainLookupStart, t.domainLookupEnd
-                , t.connectStart
-                , t.connectEnd
-                , 0
-                , t.requestStart, t.responseStart, t.responseEnd, t.domLoading, t.domInteractive, t.domContentLoadedEventStart, t.domContentLoadedEventEnd
-                , t.domComplete, t.loadEventStart, t.loadEventEnd);
+            var timing = new Navigation(t);
+            //var timing = this.getTiming(t.navigationStart, t.unloadEventStart, t.unloadEventEnd, t.redirectStart, t.redirectEnd, t.fetchStart, t.domainLookupStart, t.domainLookupEnd
+            //    , t.connectStart
+            //    , t.connectEnd
+            //    , 0
+            //    , t.requestStart, t.responseStart, t.responseEnd, t.domLoading, t.domInteractive, t.domContentLoadedEventStart, t.domContentLoadedEventEnd
+            //    , t.domComplete, t.loadEventStart, t.loadEventEnd);
 
             var navigation = window.performance.navigation;
 
             // get other timing resources about this page
-            var resourceList = (window.performance && window.performance.getEntriesByType ) ? window.performance.getEntriesByType("resource") : [] ;
+            var resourceList = (window.performance && window.performance.getEntriesByType) ? window.performance.getEntriesByType("resource") : [];
 
-            var timingResources = this.getTimingResources(resourceList); 
+            var timingResources = this.getTimingResources(resourceList);
 
             // REFACTOR
             var ajaxData = { 'url': url, 'browserEventDt': browserEventDt, 'timing': timing, 'navigation': navigation, 'berfSessionId': berfSession.berfSessionId, 'berfSession': berfSession, 'timingResources': timingResources };
@@ -180,10 +237,7 @@ module Berf {
             if (window) {
                 if (window.performance) {
                     // REFACTOR
-                    //var endpoint = "/BerfWeb/Berf/log";
-                    //var endpoint = "/Berf/log";
                     var endpoint = $("script[berf-url]").attr("berf-url");
-                    var url = Berf.Util.urlSplit(window.location.toString());
 
                     var berfPerfPacket = this.getBerfData(berfSession);
 
@@ -203,67 +257,6 @@ module Berf {
                     $.ajax(req).done(doneCallback).fail(failCallback).always(alwaysCallback);
                 }
             }
-        }
-    }
-
-    export class Url {
-        url: string;
-        scheme: string;
-        slash: string;
-        host: string;
-        port: string;
-        path: string;
-        query: string;
-        hash: string;
-        pathParts: string[];
-        length: number = 9;
-    }
-
-    export class Util {
-        public static urlSplit(url: string): Url {
-            var urlParts = new Url();
-
-            // split the url according the reg
-            var urlParserReg = /^(?:([A-Za-z]+):)?(\/{0,3})([0-9.\-A-Za-z]+)(?::(\d+))?(?:\/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
-            var regSplit = urlParserReg.exec(url);
-
-            var len = urlParts.length;
-            var i;
-            for (i = 0; i < len; i += 1) {
-                switch (i) {
-                    case 0:
-                        urlParts.url = regSplit[i];
-                        break;
-                    case 1:
-                        urlParts.scheme = regSplit[i];
-                        break;
-                    case 2:
-                        urlParts.slash = regSplit[i];
-                        break;
-                    case 3:
-                        urlParts.host = regSplit[i];
-                        break;
-                    case 4:
-                        urlParts.port = regSplit[i];
-                        break;
-                    case 5:
-                        urlParts.path = regSplit[i];
-                        break;
-                    case 6:
-                        urlParts.query = regSplit[i];
-                        break;
-                    case 7:
-                        urlParts.hash = regSplit[i];
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            // get path parts
-            urlParts.pathParts = urlParts.path.split('/');
-
-            return urlParts;
         }
     }
 }

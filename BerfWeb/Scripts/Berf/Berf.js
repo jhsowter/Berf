@@ -1,6 +1,47 @@
 ﻿/// <reference path="../jquery.d.ts" />
 var Berf;
 (function (Berf) {
+    var Navigation = (function () {
+        function Navigation(nav) {
+            this.navigationStart = Navigation.NOT_SET;
+            this.navigationStart = nav.navigationStart;
+            this.unloadEventStart = this.deltaFromStart(nav.unloadEventStart);
+            this.unloadEventEnd = this.deltaFromStart(nav.unloadEventEnd);
+            this.redirectStart = this.deltaFromStart(nav.redirectStart);
+            this.redirectEnd = this.deltaFromStart(nav.redirectEnd);
+            this.fetchStart = this.deltaFromStart(nav.fetchStart);
+            this.domainLookupStart = this.deltaFromStart(nav.domainLookupStart);
+            this.domainLookupEnd = this.deltaFromStart(nav.domainLookupEnd);
+            this.connectStart = this.deltaFromStart(nav.connectStart);
+            this.connectEnd = this.deltaFromStart(nav.connectEnd);
+            this.secureConnectionStart = this.deltaFromStart(nav.secureConnectionStart);
+            this.requestStart = this.deltaFromStart(nav.requestStart);
+            this.responseStart = this.deltaFromStart(nav.responseStart);
+            this.responseEnd = this.deltaFromStart(nav.responseEnd);
+            this.domLoading = this.deltaFromStart(nav.domLoading);
+            this.domInteractive = this.deltaFromStart(nav.domInteractive);
+            this.domContentLoadedEventStart = this.deltaFromStart(nav.domContentLoadedEventStart);
+            this.domContentLoadedEventEnd = this.deltaFromStart(nav.domContentLoadedEventEnd);
+            this.domComplete = this.deltaFromStart(nav.domComplete);
+            this.loadEventStart = this.deltaFromStart(nav.loadEventStart);
+            this.loadEventEnd = this.deltaFromStart(nav.loadEventEnd);
+        }
+        Navigation.prototype.deltaFromStart = function (n) {
+            if (this.navigationStart === Navigation.NOT_SET) {
+                throw "navigationStart is not set.";
+            }
+            ;
+            return this.delta(this.navigationStart, n);
+        };
+
+        Navigation.prototype.delta = function (tZero, n) {
+            return n === 0 ? 0 : n - tZero;
+        };
+        Navigation.NOT_SET = -99.01;
+        return Navigation;
+    })();
+    Berf.Navigation = Navigation;
+
     var BerfPage = (function () {
         function BerfPage(config) {
             if (config) {
@@ -137,9 +178,14 @@ var Berf;
             var browserEventDt = (new Date()).toUTCString();
 
             var t = window.performance.timing;
+            var timing = new Navigation(t);
 
-            var timing = this.getTiming(t.navigationStart, t.unloadEventStart, t.unloadEventEnd, t.redirectStart, t.redirectEnd, t.fetchStart, t.domainLookupStart, t.domainLookupEnd, t.connectStart, t.connectEnd, 0, t.requestStart, t.responseStart, t.responseEnd, t.domLoading, t.domInteractive, t.domContentLoadedEventStart, t.domContentLoadedEventEnd, t.domComplete, t.loadEventStart, t.loadEventEnd);
-
+            //var timing = this.getTiming(t.navigationStart, t.unloadEventStart, t.unloadEventEnd, t.redirectStart, t.redirectEnd, t.fetchStart, t.domainLookupStart, t.domainLookupEnd
+            //    , t.connectStart
+            //    , t.connectEnd
+            //    , 0
+            //    , t.requestStart, t.responseStart, t.responseEnd, t.domLoading, t.domInteractive, t.domContentLoadedEventStart, t.domContentLoadedEventEnd
+            //    , t.domComplete, t.loadEventStart, t.loadEventEnd);
             var navigation = window.performance.navigation;
 
             // get other timing resources about this page
@@ -164,10 +210,7 @@ var Berf;
             if (window) {
                 if (window.performance) {
                     // REFACTOR
-                    //var endpoint = "/BerfWeb/Berf/log";
-                    //var endpoint = "/Berf/log";
                     var endpoint = $("script[berf-url]").attr("berf-url");
-                    var url = Berf.Util.urlSplit(window.location.toString());
 
                     var berfPerfPacket = this.getBerfData(berfSession);
 
@@ -192,66 +235,6 @@ var Berf;
         return BerfPage;
     })();
     Berf.BerfPage = BerfPage;
-
-    var Url = (function () {
-        function Url() {
-            this.length = 9;
-        }
-        return Url;
-    })();
-    Berf.Url = Url;
-
-    var Util = (function () {
-        function Util() {
-        }
-        Util.urlSplit = function (url) {
-            var urlParts = new Url();
-
-            // split the url according the reg
-            var urlParserReg = /^(?:([A-Za-z]+):)?(\/{0,3})([0-9.\-A-Za-z]+)(?::(\d+))?(?:\/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
-            var regSplit = urlParserReg.exec(url);
-
-            var len = urlParts.length;
-            var i;
-            for (i = 0; i < len; i += 1) {
-                switch (i) {
-                    case 0:
-                        urlParts.url = regSplit[i];
-                        break;
-                    case 1:
-                        urlParts.scheme = regSplit[i];
-                        break;
-                    case 2:
-                        urlParts.slash = regSplit[i];
-                        break;
-                    case 3:
-                        urlParts.host = regSplit[i];
-                        break;
-                    case 4:
-                        urlParts.port = regSplit[i];
-                        break;
-                    case 5:
-                        urlParts.path = regSplit[i];
-                        break;
-                    case 6:
-                        urlParts.query = regSplit[i];
-                        break;
-                    case 7:
-                        urlParts.hash = regSplit[i];
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            // get path parts
-            urlParts.pathParts = urlParts.path.split('/');
-
-            return urlParts;
-        };
-        return Util;
-    })();
-    Berf.Util = Util;
 })(Berf || (Berf = {}));
 
 var id = setTimeout(function () {
