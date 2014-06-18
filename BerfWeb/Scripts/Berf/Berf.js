@@ -1,10 +1,122 @@
-﻿/// <reference path="../jquery.d.ts" />
-var Berf;
+﻿var Berf;
 (function (Berf) {
+    var Logger = (function () {
+        function Logger() {
+            var _this = this;
+            this.Timeout = 5000;
+            this.extend = function (toExtend, extender) {
+                var key, val;
+                for (key in extender) {
+                    val = extender[key];
+                    toExtend[key] = val;
+                }
+
+                return toExtend;
+            };
+            this.Queue = [];
+            var tag = document.querySelector('[berf-url]');
+            this.Url = tag.getAttribute("berf-url");
+
+            window.addEventListener("beforeunload", function (e) {
+                _this.onBeforeUnload(e);
+            });
+
+            document.addEventListener("DOMContentLoaded", function (e) {
+                _this.onDOMContentLoaded(e);
+            });
+            //setTimeout(() => { this.send(); }, this.timeout);
+        }
+        Logger.prototype.onDOMContentLoaded = function (e) {
+            if (typeof window.performance.getEntriesByType === "function") {
+                var timing2 = window.performance.getEntriesByType("navigation");
+                if (timing2.length > 0) {
+                    timing2["BerfType"] = 2;
+                    this.enqueue(timing2);
+                }
+            }
+
+            if (typeof window.performance.timing === "object") {
+                var timing1 = new Navigation(window.performance.timing);
+                timing1["BerfType"] = 1;
+                this.enqueue(timing1);
+            }
+
+            this.send();
+        };
+
+        Logger.prototype.onBeforeUnload = function (e) {
+        };
+
+        Logger.prototype.send = function (queue) {
+            if (typeof queue === "undefined") { queue = this.Queue; }
+            if (queue.length > 0) {
+                this.post(queue);
+            }
+        };
+
+        Logger.prototype.enqueue = function (data) {
+            this.extend(data, BerfCookie.value());
+            this.Queue.push(data);
+        };
+
+        Logger.prototype.post = function (data) {
+            var _this = this;
+            var json = JSON.stringify(data);
+            var http = new XMLHttpRequest();
+
+            http.open("POST", this.Url, true);
+
+            http.setRequestHeader("Content-type", "application/json;charset=UTF-8");
+
+            http.upload.addEventListener("error", function (e) {
+                throw e;
+            }, false);
+            http.upload.addEventListener("progress", function (e) {
+                _this.onSuccess(e);
+            }, false);
+
+            http.send(json);
+        };
+
+        Logger.prototype.onSuccess = function (e) {
+            this.Queue = [];
+        };
+        return Logger;
+    })();
+    Berf.Logger = Logger;
+
+    var BerfCookie = (function () {
+        function BerfCookie() {
+        }
+        BerfCookie.value = function () {
+            var json = BerfCookie.getCookie("berfData");
+            var value = JSON.parse(json);
+
+            return value;
+        };
+
+        BerfCookie.getCookie = function (cname) {
+            var name = cname + "=";
+            var ca = document.cookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i].trim();
+                if (c.indexOf(name) == 0)
+                    return c.substring(name.length, c.length);
+            }
+            return "";
+        };
+        return BerfCookie;
+    })();
+    Berf.BerfCookie = BerfCookie;
+
     var Navigation = (function () {
         function Navigation(nav) {
-            this.navigationStart = Navigation.NOT_SET;
-            this.navigationStart = nav.navigationStart;
+            this.navigationStart = 0;
+            if (!nav) {
+                nav = window.performance.timing;
+            }
+
+            //this.navigationStart = 0;
             this.unloadEventStart = this.deltaFromStart(nav.unloadEventStart);
             this.unloadEventEnd = this.deltaFromStart(nav.unloadEventEnd);
             this.redirectStart = this.deltaFromStart(nav.redirectStart);
@@ -27,313 +139,18 @@ var Berf;
             this.loadEventEnd = this.deltaFromStart(nav.loadEventEnd);
         }
         Navigation.prototype.deltaFromStart = function (n) {
-            if (this.navigationStart === Navigation.NOT_SET) {
-                throw "navigationStart is not set.";
+            if (typeof n === "number") {
+                return this.delta(this.navigationStart, n);
             }
-            ;
-            return this.delta(this.navigationStart, n);
         };
 
         Navigation.prototype.delta = function (tZero, n) {
             return n === 0 ? 0 : n - tZero;
         };
-        Navigation.NOT_SET = -99.01;
         return Navigation;
     })();
     Berf.Navigation = Navigation;
-
-    var BerfPage = (function () {
-        function BerfPage(config) {
-            if (config) {
-                this.setup(config);
-            }
-        }
-        BerfPage.getBerfSession = function () {
-            var berfDataJson = Berf.BerfPage.getCookie("berfData");
-
-            // REFACTOR
-            var berfSession = eval("(" + berfDataJson + ')');
-
-            return berfSession;
-        };
-
-        BerfPage.getCookie = function (cname) {
-            var name = cname + "=";
-            var ca = document.cookie.split(';');
-            for (var i = 0; i < ca.length; i++) {
-                var c = ca[i].trim();
-                if (c.indexOf(name) == 0)
-                    return c.substring(name.length, c.length);
-            }
-            return "";
-        };
-
-        BerfPage.prototype.getTiming = function (navigationStart, unloadEventStart, unloadEventEnd, redirectStart, redirectEnd, fetchStart, domainLookupStart, domainLookupEnd, connectStart, connectEnd, secureConnectionStart, requestStart, responseStart, responseEnd, domLoading, domInteractive, domContentLoadedEventStart, domContentLoadedEventEnd, domComplete, loadEventStart, loadEventEnd) {
-            var baseValue = navigationStart;
-
-            var timing = {
-                navigationStart: navigationStart - baseValue,
-                unloadEventStart: unloadEventStart - baseValue,
-                unloadEventEnd: unloadEventEnd - baseValue,
-                redirectStart: redirectStart === 0 ? 0 : (redirectStart - baseValue),
-                redirectEnd: redirectEnd === 0 ? 0 : (redirectEnd - baseValue),
-                fetchStart: fetchStart - baseValue,
-                domainLookupStart: domainLookupStart - baseValue,
-                domainLookupEnd: domainLookupEnd - baseValue,
-                connectStart: connectStart - baseValue,
-                connectEnd: connectEnd - baseValue,
-                secureConnectionStart: secureConnectionStart === 0 ? 0 : (secureConnectionStart - baseValue),
-                requestStart: requestStart - baseValue,
-                responseStart: responseStart - baseValue,
-                responseEnd: responseEnd - baseValue,
-                domLoading: domLoading - baseValue,
-                domInteractive: domInteractive - baseValue,
-                domContentLoadedEventStart: domContentLoadedEventStart - baseValue,
-                domContentLoadedEventEnd: domContentLoadedEventEnd - baseValue,
-                domComplete: domComplete - baseValue,
-                loadEventStart: loadEventStart - baseValue,
-                loadEventEnd: loadEventEnd - baseValue
-            };
-
-            return timing;
-        };
-
-        BerfPage.prototype.getTimingResources = function (resourceList) {
-            var ret = [];
-
-            if (resourceList) {
-                for (var i = 0; i < resourceList.length; i++) {
-                    var res = resourceList[i];
-
-                    var msg = "";
-
-                    //msg += "connectEnd:" + res.connectEnd + " ;";
-                    //connectStart: 1.6406110861237808
-                    //domainLookupEnd: 1.6406110861237808
-                    //domainLookupStart: 1.6406110861237808
-                    //duration: 0.5149737834272623
-                    msg += "duration:" + res.duration + " ;";
-
-                    //entryType: "resource"
-                    //fetchStart: 1.6406110861237808
-                    //initiatorType: "link"
-                    msg += "initiatorType:" + res.initiatorType + " ;";
-
-                    //name: "http://localhost:48213/Content/css?v=m8KdMFOCcNeZrATLbCQ_9gxex1_Ma7rE5iJzJXojUIk1"
-                    msg += "name:" + res.name + " ;";
-
-                    //redirectEnd: 0
-                    //redirectStart: 0
-                    //requestStart: 1.6406110861237808
-                    //responseEnd: 1.7239245469830566
-                    //responseStart: 1.6406110861237808
-                    //startTime: 1.2089507635557943
-                    //console.log(msg);
-                    //console.log(JSON.stringify(res));
-                    //console.log(res);
-                    //console.log(JSON.stringify(res));
-                    //console.log(JSON.stringify(res, null, 2));
-                    //var msg = JSON.stringify(res, undefined, 2);
-                    //connectEnd: 1.6406110861237808
-                    //connectStart: 1.6406110861237808
-                    //domainLookupEnd: 1.6406110861237808
-                    //domainLookupStart: 1.6406110861237808
-                    //duration: 0.5149737834272623
-                    //entryType: "resource"
-                    //fetchStart: 1.6406110861237808
-                    //initiatorType: "link"
-                    //name: "http://localhost:48213/Content/css?v=m8KdMFOCcNeZrATLbCQ_9gxex1_Ma7rE5iJzJXojUIk1"
-                    //redirectEnd: 0
-                    //redirectStart: 0
-                    //requestStart: 1.6406110861237808
-                    //responseEnd: 1.7239245469830566
-                    //responseStart: 1.6406110861237808
-                    //startTime: 1.2089507635557943
-                    //readonly attribute DOMHighResTimeStamp redirectStart;
-                    //  readonly attribute DOMHighResTimeStamp redirectEnd;
-                    //  readonly attribute DOMHighResTimeStamp fetchStart;
-                    //  readonly attribute DOMHighResTimeStamp domainLookupStart;
-                    //  readonly attribute DOMHighResTimeStamp domainLookupEnd;
-                    //  readonly attribute DOMHighResTimeStamp connectStart;
-                    //  readonly attribute DOMHighResTimeStamp connectEnd;
-                    //  readonly attribute DOMHighResTimeStamp secureConnectionStart;
-                    //  readonly attribute DOMHighResTimeStamp requestStart;
-                    //  readonly attribute DOMHighResTimeStamp responseStart;
-                    //  readonly attribute DOMHighResTimeStamp responseEnd;
-                    if (resourceList[i].initiatorType == "img") {
-                        //alert("End to end resource fetch: " + resourceList[i].responseEnd - resourceList[i].startTime);
-                    }
-
-                    ret.push(res);
-                }
-            }
-
-            return ret;
-        };
-
-        BerfPage.prototype.getBerfData = function (berfSession) {
-            // REFACTOR
-            var url = window.location.toString();
-
-            var browserEventDt = (new Date()).toUTCString();
-
-            var t = window.performance.timing;
-            var timing = new Navigation(t);
-
-            //var timing = this.getTiming(t.navigationStart, t.unloadEventStart, t.unloadEventEnd, t.redirectStart, t.redirectEnd, t.fetchStart, t.domainLookupStart, t.domainLookupEnd
-            //    , t.connectStart
-            //    , t.connectEnd
-            //    , 0
-            //    , t.requestStart, t.responseStart, t.responseEnd, t.domLoading, t.domInteractive, t.domContentLoadedEventStart, t.domContentLoadedEventEnd
-            //    , t.domComplete, t.loadEventStart, t.loadEventEnd);
-            var navigation = window.performance.navigation;
-
-            // get other timing resources about this page
-            var resourceList = (window.performance && window.performance.getEntriesByType) ? window.performance.getEntriesByType("resource") : [];
-
-            var timingResources = this.getTimingResources(resourceList);
-
-            // REFACTOR
-            var ajaxData = { 'url': url, 'browserEventDt': browserEventDt, 'timing': timing, 'navigation': navigation, 'berfSessionId': berfSession.berfSessionId, 'berfSession': berfSession, 'timingResources': timingResources };
-
-            //
-            return ajaxData;
-        };
-
-        BerfPage.prototype.setup = function (config) {
-            this.url = config.url;
-        };
-
-        BerfPage.prototype.go = function (config, berfSession) {
-            this.setup(config);
-
-            if (window) {
-                if (window.performance) {
-                    // REFACTOR
-                    var endpoint = $("script[berf-url]").attr("berf-url");
-
-                    var berfPerfPacket = this.getBerfData(berfSession);
-
-                    var dataJson = JSON.stringify(berfPerfPacket);
-                    var req = { 'url': endpoint, 'type': "post", 'contentType': "application/json", 'cache': false, 'data': dataJson };
-                    var doneCallback = function (data, textStatus, jqXhr) {
-                        if (data.IsOK) {
-                            console.log("Berf log OK ");
-                        } else {
-                            console.log("Berf log not OK");
-                        }
-                    };
-                    var failCallback = function (jqXhr, textStatus, errorThrown) {
-                        console.log(jqXhr.responseText);
-                    };
-                    var alwaysCallback = function (jqXhr, textStatus, errorThrown) {
-                    };
-                    $.ajax(req).done(doneCallback).fail(failCallback).always(alwaysCallback);
-                }
-            }
-        };
-        return BerfPage;
-    })();
-    Berf.BerfPage = BerfPage;
 })(Berf || (Berf = {}));
 
-var id = setTimeout(function () {
-    var config = { 'url': window.location.toString() };
-
-    var berfSession = Berf.BerfPage.getBerfSession();
-
-    var page = new Berf.BerfPage(null);
-
-    page.go(config, berfSession);
-}, 2000);
-
-var berfLog = function () {
-    // REFACTOR
-    console.log("berflog...");
-
-    var berfDataJson = Berf.BerfPage.getCookie("berfData");
-
-    //console.log(berfDataJson);
-    // print the cookie json data sent from the server
-    var berf = eval("(" + berfDataJson + ')');
-    console.log("berf.BerfSessionId <- " + berf.BerfSessionId);
-
-    var resourceList = window.performance.getEntriesByType ? window.performance.getEntriesByType("resource") : [];
-
-    for (var i = 0; i < resourceList.length; i++) {
-        var res = resourceList[i];
-        var msg = "";
-
-        //msg += "connectEnd:" + res.connectEnd + " ;";
-        //connectStart: 1.6406110861237808
-        //domainLookupEnd: 1.6406110861237808
-        //domainLookupStart: 1.6406110861237808
-        //duration: 0.5149737834272623
-        msg += "duration:" + res.duration + " ;";
-
-        //entryType: "resource"
-        //fetchStart: 1.6406110861237808
-        //initiatorType: "link"
-        msg += "initiatorType:" + res.initiatorType + " ;";
-
-        //name: "http://localhost:48213/Content/css?v=m8KdMFOCcNeZrATLbCQ_9gxex1_Ma7rE5iJzJXojUIk1"
-        msg += "name:" + res.name + " ;";
-
-        //redirectEnd: 0
-        //redirectStart: 0
-        //requestStart: 1.6406110861237808
-        //responseEnd: 1.7239245469830566
-        //responseStart: 1.6406110861237808
-        //startTime: 1.2089507635557943
-        //console.log(msg);
-        //console.log(JSON.stringify(res));
-        //console.log(res);
-        //console.log(JSON.stringify(res));
-        //console.log(JSON.stringify(res, null, 2));
-        //var msg = JSON.stringify(res, undefined, 2);
-        //connectEnd: 1.6406110861237808
-        //connectStart: 1.6406110861237808
-        //domainLookupEnd: 1.6406110861237808
-        //domainLookupStart: 1.6406110861237808
-        //duration: 0.5149737834272623
-        //entryType: "resource"
-        //fetchStart: 1.6406110861237808
-        //initiatorType: "link"
-        //name: "http://localhost:48213/Content/css?v=m8KdMFOCcNeZrATLbCQ_9gxex1_Ma7rE5iJzJXojUIk1"
-        //redirectEnd: 0
-        //redirectStart: 0
-        //requestStart: 1.6406110861237808
-        //responseEnd: 1.7239245469830566
-        //responseStart: 1.6406110861237808
-        //startTime: 1.2089507635557943
-        //readonly attribute DOMHighResTimeStamp redirectStart;
-        //  readonly attribute DOMHighResTimeStamp redirectEnd;
-        //  readonly attribute DOMHighResTimeStamp fetchStart;
-        //  readonly attribute DOMHighResTimeStamp domainLookupStart;
-        //  readonly attribute DOMHighResTimeStamp domainLookupEnd;
-        //  readonly attribute DOMHighResTimeStamp connectStart;
-        //  readonly attribute DOMHighResTimeStamp connectEnd;
-        //  readonly attribute DOMHighResTimeStamp secureConnectionStart;
-        //  readonly attribute DOMHighResTimeStamp requestStart;
-        //  readonly attribute DOMHighResTimeStamp responseStart;
-        //  readonly attribute DOMHighResTimeStamp responseEnd;
-        if (resourceList[i].initiatorType == "img") {
-            //alert("End to end resource fetch: " + resourceList[i].responseEnd - resourceList[i].startTime);
-        }
-    }
-};
-
-var id = setTimeout(berfLog, 5000);
-//// https://developer.mozilla.org/en-US/docs/Web/Reference/Events/beforeunload
-//window.addEventListener("beforeunload", function (e) {
-//    // ask to leave page
-//    var confirmationMessage = "abc \o  def /  ghi";
-//
-//    var x = (e || window.event);
-//
-//    x['returnValue'] = confirmationMessage;     //Gecko + IE
-//
-//    return confirmationMessage;                                //Webkit, Safari, Chrome etc.
-//
-//});
+new Berf.Logger();
 //# sourceMappingURL=Berf.js.map
