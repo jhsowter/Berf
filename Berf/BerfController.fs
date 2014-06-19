@@ -95,59 +95,60 @@ type BerfController() =
     // helper
     let nullable value = new System.Nullable<_>(value)
 
-    let toBerfTimer_1 (berfPacket : BerfPerfPacket) (other : HttpSummary) : EntityConnection.ServiceTypes.BerfTimer =
+    let toBerfTimer_1 (berfPacket : Packet) (other : HttpSummary) : EntityConnection.ServiceTypes.BerfTimer =
         let berfTimer =
             new EntityConnection.ServiceTypes.BerfTimer(
                 BerfTimerId = Guid.NewGuid(),
                 BerfSessionId = berfPacket.berfSessionId,
                 EventDt = nullable DateTime.UtcNow, BerfType = nullable 1,
                 SigTestId = String.Empty, SigId = berfPacket.url,
-                ControllerAction = berfPacket.berfSession.area
-                                    + berfPacket.berfSession.controller
-                                    + berfPacket.berfSession.action,
-                ActionTime = nullable berfPacket.berfSession.actionTime,
-                ViewTime = nullable berfPacket.berfSession.viewTime,
+                ControllerAction = berfPacket.area
+                                    + berfPacket.controller
+                                    + berfPacket.action,
+                ActionTime = nullable berfPacket.actionTime,
+                ViewTime = nullable berfPacket.viewTime,
                 Count = nullable 1, ServerEventDt = "", BrowserEventDt = "",
                 ClientSigVer = other.ClientSigVer, ClientSig = String.Empty,
                 Server = other.Server, IP = other.IP, UserId = other.AuthUser,
                 Browser = other.Browser, BrowserVersion = other.BrowserVersion,
                 UserAgentString = other.UserAgentString,
                 Url = other.ClientSigVer,
-                navigationStart = berfPacket.timing.navigationStart,
-                unloadEventStart = berfPacket.timing.unloadEventStart,
-                unloadEventEnd = berfPacket.timing.unloadEventEnd,
-                redirectStart = berfPacket.timing.redirectStart,
-                redirectEnd = berfPacket.timing.redirectEnd,
-                fetchStart = berfPacket.timing.fetchStart,
-                domainLookupStart = berfPacket.timing.domainLookupStart,
-                domainLookupEnd = berfPacket.timing.domainLookupEnd,
-                connectStart = berfPacket.timing.connectStart,
-                connectEnd = berfPacket.timing.connectEnd,
-                secureConnectionStart = berfPacket.timing.secureConnectionStart,
-                requestStart = berfPacket.timing.redirectStart,
-                responseStart = berfPacket.timing.requestStart,
-                responseEnd = berfPacket.timing.responseEnd,
-                domLoading = berfPacket.timing.domLoading,
-                domInteractive = berfPacket.timing.domInteractive,
-                domContentLoadedEventStart = berfPacket.timing.domContentLoadedEventStart,
-                domContentLoadedEventEnd = berfPacket.timing.domContentLoadedEventEnd,
-                domComplete = berfPacket.timing.domComplete,
-                loadEventStart = berfPacket.timing.loadEventStart,
-                loadEventEnd = berfPacket.timing.loadEventEnd)
+                navigationStart = berfPacket.navigationStart,
+                unloadEventStart = berfPacket.unloadEventStart,
+                unloadEventEnd = berfPacket.unloadEventEnd,
+                redirectStart = berfPacket.redirectStart,
+                redirectEnd = berfPacket.redirectEnd,
+                fetchStart = berfPacket.fetchStart,
+                domainLookupStart = berfPacket.domainLookupStart,
+                domainLookupEnd = berfPacket.domainLookupEnd,
+                connectStart = berfPacket.connectStart,
+                connectEnd = berfPacket.connectEnd,
+                secureConnectionStart = berfPacket.secureConnectionStart,
+                requestStart = berfPacket.redirectStart,
+                responseStart = berfPacket.requestStart,
+                responseEnd = berfPacket.responseEnd,
+                domLoading = berfPacket.domLoading,
+                domInteractive = berfPacket.domInteractive,
+                domContentLoadedEventStart = berfPacket.domContentLoadedEventStart,
+                domContentLoadedEventEnd = berfPacket.domContentLoadedEventEnd,
+                domComplete = berfPacket.domComplete,
+                loadEventStart = berfPacket.loadEventStart,
+                loadEventEnd = berfPacket.loadEventEnd)
         berfTimer
 
 
 
-    let getBerfTimers (berfPacket : BerfPerfPacket) (httpSummary : HttpSummary) : EntityConnection.ServiceTypes.BerfTimer list =
+    let getBerfTimers (berfPacket : Packet) (httpSummary : HttpSummary) : EntityConnection.ServiceTypes.BerfTimer =
 
-        // main timer
-        let berfTimers = List.empty<EntityConnection.ServiceTypes.BerfTimer>
-        let berfTimer = toBerfTimer_1 berfPacket httpSummary
-        let mainTimerList = List.append berfTimers [ berfTimer ]
-
-        // child timer resources
-        let timingResources = if berfPacket.timingResources = null then [] else List.ofArray berfPacket.timingResources
-        let toBerfTimer_2 (timingResource : TimingResource) : EntityConnection.ServiceTypes.BerfTimer =
+        
+//        // main timer
+//        let berfTimers = List.empty<EntityConnection.ServiceTypes.BerfTimer>
+//        let berfTimer = toBerfTimer_1 berfPacket httpSummary
+//        let mainTimerList = List.append berfTimers [ berfTimer ]
+//
+//        // child timer resources
+//        let timingResources = if berfPacket.timingResources = null then [] else List.ofArray berfPacket.timingResources
+//        let toBerfTimer_2 (timingResource : TimingResource) : EntityConnection.ServiceTypes.BerfTimer =
             let ret =
                 new EntityConnection.ServiceTypes.BerfTimer(
                     BerfTimerId = Guid.NewGuid(),
@@ -155,12 +156,12 @@ type BerfController() =
                     BerfType = nullable 2, 
                     EventDt = nullable DateTime.UtcNow,
                     SigTestId = String.Empty, 
-                    SigId = timingResource.name,
+//                    SigId = timingResource.name,
                     ActionTime = nullable 0.0, 
                     ViewTime = nullable 0.0,
-                    ControllerAction = berfPacket.berfSession.area
-                                    + berfPacket.berfSession.controller
-                                    + berfPacket.berfSession.action,
+                    ControllerAction = berfPacket.area
+                                    + berfPacket.controller
+                                    + berfPacket.action,
                     Count = nullable 1,
                     ServerEventDt = String.Empty, 
                     BrowserEventDt = String.Empty,
@@ -172,34 +173,34 @@ type BerfController() =
                     Browser = httpSummary.Browser,
                     BrowserVersion = httpSummary.BrowserVersion,
                     Url = httpSummary.ClientSigVer, 
-                    connectEnd                = timingResource.connectEnd               ,
-                    connectStart              = timingResource.connectStart             ,
-                    domainLookupEnd           = timingResource.domainLookupEnd          ,
-                    domainLookupStart         = timingResource.domainLookupStart        ,
-                    duration                  = timingResource.duration                 ,
-                    entryType                 = timingResource.entryType                ,
-                    fetchStart                = timingResource.fetchStart               ,
-                    initiatorType             = timingResource.initiatorType            ,
-                    name                      = timingResource.name                     ,
-                    redirectEnd               = timingResource.redirectEnd              ,
-                    redirectStart             = timingResource.redirectStart            ,
-                    requestStart              = timingResource.requestStart             ,
-                    responseEnd               = timingResource.responseEnd              ,
-                    responseStart             = timingResource.responseStart            ,
-                    startTime                 = timingResource.startTime
+                    connectEnd                = berfPacket.connectEnd               ,
+                    connectStart              = berfPacket.connectStart             ,
+                    domainLookupEnd           = berfPacket.domainLookupEnd          ,
+                    domainLookupStart         = berfPacket.domainLookupStart        ,
+//                    duration                  = berfPacket.duration                 ,
+//                    entryType                 = berfPacket.entryType                ,
+//                    fetchStart                = berfPacket.fetchStart               ,
+//                    initiatorType             = berfPacket.initiatorType            ,
+//                    name                      = berfPacket.name                     ,
+                    redirectEnd               = berfPacket.redirectEnd              ,
+                    redirectStart             = berfPacket.redirectStart            ,
+                    requestStart              = berfPacket.requestStart             ,
+                    responseEnd               = berfPacket.responseEnd              ,
+                    responseStart             = berfPacket.responseStart            
+//                    startTime                 = berfPacket.startTime
                     )
 
             ret
 
-        let timingResourcesList = timingResources |> List.map (fun x -> toBerfTimer_2 x)
-        List.append mainTimerList timingResourcesList
+//        let timingResourcesList = timingResources |> List.map (fun x -> toBerfTimer_2 x)
+//        List.append mainTimerList timingResourcesList
         //let ret = List.append mainTimerList timingResourcesList
         //ret
 
     member this.Index() =
         this.Json({ IsOK = true; Message = "OK" }, JsonRequestBehavior.AllowGet)
 
-    member this.log (model : BerfPerfPacket) =
+    member this.log (model : Packet[]) =
         
         //let db = dbSchema.GetDataContext()
         let cnString = "data source=.\SQLSERVER2012 ; Initial Catalog=Berf ; Integrated Security = SSPI;"
@@ -208,7 +209,7 @@ type BerfController() =
         let other = getOther this.HttpContext
         let context = EntityConnection.GetDataContext()
         let fullContext = context.DataContext
-        let berfTimers = getBerfTimers model other
+        let berfTimers = model |> Seq.map (fun m -> getBerfTimers m other)
         for i in berfTimers do
             fullContext.AddObject("BerfTimer", i)
         fullContext.CommandTimeout <- nullable 1000

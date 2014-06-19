@@ -175,6 +175,7 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="Scripts\Berf\Berf.ts" />
+    <TypeScriptCompile Include="Scripts\Berf\_Berf.ts" />
     <TypeScriptCompile Include="Scripts\jquery.d.ts" />
   </ItemGroup>
   <ItemGroup>

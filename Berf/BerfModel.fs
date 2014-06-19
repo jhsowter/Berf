@@ -16,6 +16,43 @@ type BerfMeta =
       Message : string }
 
 [<CLIMutable>]
+type Packet = 
+    { berfType : string;
+        berfSessionId: string;
+        navigationStart: System.Double;
+      unloadEventStart: System.Double;
+      url: string;
+      area: string;
+      controller: string;
+      action: string;
+      actionTime: System.Double;
+      viewTime: System.Double;
+      unloadEventEnd: System.Double;
+      linkNegotiationStart: System.Double;
+      linkNegotiationEnd: System.Double;
+      redirectStart: System.Double;
+      redirectEnd: System.Double;
+      fetchStart: System.Double;
+      domainLookupStart: System.Double;
+      domainLookupEnd: System.Double;
+      connectStart: System.Double;
+      connectEnd: System.Double;
+      secureConnectionStart: System.Double;
+      requestStart: System.Double;
+      responseStart: System.Double;
+      responseEnd: System.Double;
+      domLoading: System.Double;
+      domInteractive: System.Double;
+      domContentLoadedEventStart: System.Double;
+      domContentLoadedEventEnd: System.Double;
+      domComplete: System.Double;
+      loadEventStart: System.Double;
+      loadEventEnd: System.Double;
+      prerenderSwitch: System.Double
+      ``type``: string;
+      redirectCount: System.Int32 }
+
+[<CLIMutable>]
 type HttpSummary =
     { Server : String
       Browser : String
@@ -113,4 +150,3 @@ type BerfPerfPacket =
       navigation : PerformanceNavigation
       berfSession : BerfSession
       timingResources : TimingResource [] }
-

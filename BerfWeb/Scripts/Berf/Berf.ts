@@ -3,9 +3,11 @@
         Timeout = 5000;
         Url: string;
         Queue: Array<any>;
+        Sent: Array<any>;
 
         constructor() {
             this.Queue = [];
+            this.Sent = [];
             var tag = document.querySelector('[berf-url]');
             this.Url = tag.getAttribute("berf-url");
 
@@ -13,20 +15,33 @@
                 this.onBeforeUnload(e);
             });
 
-            document.addEventListener("DOMContentLoaded", (e: Event) => {
-                this.onDOMContentLoaded(e);
+            window.addEventListener("load", (e: UIEvent) => {
+                this.onLoad(e);
             });
-
-            //setTimeout(() => { this.send(); }, this.timeout);
         }
 
-        onDOMContentLoaded(e: Event) {
+        logResources() {
+            if (typeof window.performance.getEntriesByType === "function") {
+                var resources = window.performance.getEntriesByType("resource");
+                if (resources.length > 0) {
+                    for (var i = 0; i < resources.length; i++) {
+                        var resource = resources[i];
+                        resource["BerfType"] = 2;
+                        this.enqueue(resource);
+                    }
+                }
+            }
+        }
+
+        log() {
             if (typeof window.performance.getEntriesByType === "function") {
                 var timing2 = window.performance.getEntriesByType("navigation");
                 if (timing2.length > 0) {
-                    timing2["BerfType"] = 2;
-                    this.enqueue(timing2);
+                    timing2[0]["BerfType"] = 2;
+                    this.enqueue(timing2[0]);
                 }
+
+                this.logResources();
             }
 
             if (typeof window.performance.timing === "object") {
@@ -34,11 +49,16 @@
                 timing1["BerfType"] = 1;
                 this.enqueue(timing1);
             }
+        }
 
+        onLoad(e: UIEvent) {
+            this.log();
             this.send();
         }
 
         onBeforeUnload(e: BeforeUnloadEvent) {
+            this.log();
+            this.send();
         }
 
         send(queue: Array<any> = this.Queue) {
@@ -48,8 +68,46 @@
         }
 
         enqueue(data) {
-            this.extend(data, BerfCookie.value());
-            this.Queue.push(data);
+            var extended = this.extend(data, BerfCookie.value());
+
+            var inQueue = this.contains(this.Queue, extended);
+            var isSent = this.contains(this.Sent, extended);
+
+            if (!inQueue && !isSent) {
+                this.Queue.push(extended);
+            }
+        }
+
+        contains(queue: Array<any>, value: any) {
+            for (var i = 0; i < queue.length; i++) {
+                if (this.equals(queue[i], value)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        equals(value, other) {
+            for (var key in value) {
+                if (typeof value[key] !== "undefined" && typeof other[key] === "undefined") {
+                    return false;
+                }
+
+                if (value[key] !== other[key]) {
+                    return false;
+                }
+            }
+
+            for (var otherKey in other) {
+                if (typeof other[otherKey] !== "undefined") {
+                    if (typeof value[otherKey] === "undefined") {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         post(data: any) {
@@ -69,14 +127,15 @@
         }
 
         onSuccess(e: ProgressEvent) {
+            for (var i = 0; i < this.Queue.length; i++) {
+                this.Sent.push(this.Queue[i]);
+            }
             this.Queue = [];
         }
 
-        extend = function (toExtend, extender: any) {
-            var key, val;
-            for (key in extender) {
-                val = extender[key];
-                toExtend[key] = val;
+        extend = function (toExtend: {}, extender: {}) {
+            for (var key in extender) {
+                toExtend[key] = extender[key];
             }
 
             return toExtend;
@@ -103,7 +162,7 @@
     }
 
     export class Navigation {
-        navigationStart: number = 0;
+        navigationStart: number;
         unloadEventStart: number;
         unloadEventEnd: number;
         redirectStart: number;
@@ -129,33 +188,27 @@
             if (!nav) {
                 nav = window.performance.timing;
             }
-            //this.navigationStart = 0;
-            this.unloadEventStart = this.deltaFromStart(nav.unloadEventStart);
-            this.unloadEventEnd = this.deltaFromStart(nav.unloadEventEnd);
-            this.redirectStart = this.deltaFromStart(nav.redirectStart);
-            this.redirectEnd = this.deltaFromStart(nav.redirectEnd);
-            this.fetchStart = this.deltaFromStart(nav.fetchStart);
-            this.domainLookupStart = this.deltaFromStart(nav.domainLookupStart);
-            this.domainLookupEnd = this.deltaFromStart(nav.domainLookupEnd);
-            this.connectStart = this.deltaFromStart(nav.connectStart);
-            this.connectEnd = this.deltaFromStart(nav.connectEnd);
-            this.secureConnectionStart = this.deltaFromStart(nav.secureConnectionStart);
-            this.requestStart = this.deltaFromStart(nav.requestStart);
-            this.responseStart = this.deltaFromStart(nav.responseStart);
-            this.responseEnd = this.deltaFromStart(nav.responseEnd);
-            this.domLoading = this.deltaFromStart(nav.domLoading);
-            this.domInteractive = this.deltaFromStart(nav.domInteractive);
-            this.domContentLoadedEventStart = this.deltaFromStart(nav.domContentLoadedEventStart);
-            this.domContentLoadedEventEnd = this.deltaFromStart(nav.domContentLoadedEventEnd);
-            this.domComplete = this.deltaFromStart(nav.domComplete);
-            this.loadEventStart = this.deltaFromStart(nav.loadEventStart);
-            this.loadEventEnd = this.deltaFromStart(nav.loadEventEnd);
-        }
-
-        deltaFromStart(n: number) {
-            if (typeof n === "number") {
-                return this.delta(this.navigationStart, n);
-            }
+            this.navigationStart = this.delta(nav.navigationStart, nav.navigationStart);
+            this.unloadEventStart = this.delta(nav.navigationStart, nav.unloadEventStart);
+            this.unloadEventEnd = this.delta(nav.navigationStart, nav.unloadEventEnd);
+            this.redirectStart = this.delta(nav.navigationStart, nav.redirectStart);
+            this.redirectEnd = this.delta(nav.navigationStart, nav.redirectEnd);
+            this.fetchStart = this.delta(nav.navigationStart, nav.fetchStart);
+            this.domainLookupStart = this.delta(nav.navigationStart, nav.domainLookupStart);
+            this.domainLookupEnd = this.delta(nav.navigationStart, nav.domainLookupEnd);
+            this.connectStart = this.delta(nav.navigationStart, nav.connectStart);
+            this.connectEnd = this.delta(nav.navigationStart, nav.connectEnd);
+            this.secureConnectionStart = this.delta(nav.navigationStart, nav.secureConnectionStart);
+            this.requestStart = this.delta(nav.navigationStart, nav.requestStart);
+            this.responseStart = this.delta(nav.navigationStart, nav.responseStart);
+            this.responseEnd = this.delta(nav.navigationStart, nav.responseEnd);
+            this.domLoading = this.delta(nav.navigationStart, nav.domLoading);
+            this.domInteractive = this.delta(nav.navigationStart, nav.domInteractive);
+            this.domContentLoadedEventStart = this.delta(nav.navigationStart, nav.domContentLoadedEventStart);
+            this.domContentLoadedEventEnd = this.delta(nav.navigationStart, nav.domContentLoadedEventEnd);
+            this.domComplete = this.delta(nav.navigationStart, nav.domComplete);
+            this.loadEventStart = this.delta(nav.navigationStart, nav.loadEventStart);
+            this.loadEventEnd = this.delta(nav.navigationStart, nav.loadEventEnd);
         }
 
         delta(tZero: number, n: number) {
@@ -164,5 +217,14 @@
     }
 }
 
-new Berf.Logger();
+var berf = new Berf.Logger();
 
+//declare var XMLHttpRequest;
+var req = new XMLHttpRequest;
+var baseSend = req.send;
+req.send = () => {
+    berf.logResources();
+    console.log("send");
+    return baseSend.apply(req, arguments);
+};
+window["XMLHttpRequest"] = () => { return req; };

@@ -26,5 +26,11 @@ namespace BerfWeb.Controllers
 
             return View();
         }
+
+        public JsonResult SomeJson()
+        {
+            Thread.Sleep(1000);
+            return this.Json("here we go", JsonRequestBehavior.AllowGet);
+        }
     }
 }

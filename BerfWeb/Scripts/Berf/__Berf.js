@@ -5,14 +5,15 @@
             var _this = this;
             this.Timeout = 5000;
             this.extend = function (toExtend, extender) {
-                for (var key in extender) {
-                    toExtend[key] = extender[key];
+                var key, val;
+                for (key in extender) {
+                    val = extender[key];
+                    toExtend[key] = val;
                 }
 
                 return toExtend;
             };
             this.Queue = [];
-            this.Sent = [];
             var tag = document.querySelector('[berf-url]');
             this.Url = tag.getAttribute("berf-url");
 
@@ -24,8 +25,14 @@
                 _this.onLoad(e);
             });
         }
-        Logger.prototype.logResources = function () {
+        Logger.prototype.onLoad = function (e) {
             if (typeof window.performance.getEntriesByType === "function") {
+                var timing2 = window.performance.getEntriesByType("navigation");
+                if (timing2.length > 0) {
+                    timing2[0]["BerfType"] = 2;
+                    this.enqueue(timing2[0]);
+                }
+
                 var resources = window.performance.getEntriesByType("resource");
                 if (resources.length > 0) {
                     for (var i = 0; i < resources.length; i++) {
@@ -35,34 +42,17 @@
                     }
                 }
             }
-        };
-
-        Logger.prototype.log = function () {
-            if (typeof window.performance.getEntriesByType === "function") {
-                var timing2 = window.performance.getEntriesByType("navigation");
-                if (timing2.length > 0) {
-                    timing2[0]["BerfType"] = 2;
-                    this.enqueue(timing2[0]);
-                }
-
-                this.logResources();
-            }
 
             if (typeof window.performance.timing === "object") {
                 var timing1 = new Navigation(window.performance.timing);
                 timing1["BerfType"] = 1;
                 this.enqueue(timing1);
             }
-        };
 
-        Logger.prototype.onLoad = function (e) {
-            this.log();
             this.send();
         };
 
         Logger.prototype.onBeforeUnload = function (e) {
-            this.log();
-            this.send();
         };
 
         Logger.prototype.send = function (queue) {
@@ -73,46 +63,8 @@
         };
 
         Logger.prototype.enqueue = function (data) {
-            var extended = this.extend(data, BerfCookie.value());
-
-            var inQueue = this.contains(this.Queue, extended);
-            var isSent = this.contains(this.Sent, extended);
-
-            if (!inQueue && !isSent) {
-                this.Queue.push(extended);
-            }
-        };
-
-        Logger.prototype.contains = function (queue, value) {
-            for (var i = 0; i < queue.length; i++) {
-                if (this.equals(queue[i], value)) {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
-        Logger.prototype.equals = function (value, other) {
-            for (var key in value) {
-                if (typeof value[key] !== "undefined" && typeof other[key] === "undefined") {
-                    return false;
-                }
-
-                if (value[key] !== other[key]) {
-                    return false;
-                }
-            }
-
-            for (var otherKey in other) {
-                if (typeof other[otherKey] !== "undefined") {
-                    if (typeof value[otherKey] === "undefined") {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            this.extend(data, BerfCookie.value());
+            this.Queue.push(data);
         };
 
         Logger.prototype.post = function (data) {
@@ -135,9 +87,6 @@
         };
 
         Logger.prototype.onSuccess = function (e) {
-            for (var i = 0; i < this.Queue.length; i++) {
-                this.Sent.push(this.Queue[i]);
-            }
             this.Queue = [];
         };
         return Logger;
@@ -203,17 +152,5 @@
     Berf.Navigation = Navigation;
 })(Berf || (Berf = {}));
 
-var berf = new Berf.Logger();
-
-//declare var XMLHttpRequest;
-var req = new XMLHttpRequest;
-var baseSend = req.send;
-req.send = function () {
-    berf.logResources();
-    console.log("send");
-    return baseSend.apply(req, arguments);
-};
-window["XMLHttpRequest"] = function () {
-    return req;
-};
-//# sourceMappingURL=Berf.js.map
+new Berf.Logger();
+//# sourceMappingURL=__Berf.js.map
