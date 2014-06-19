@@ -3,6 +3,10 @@
 // build script
 // minify
 // log mvc timing on ajax calls
+// specific users
+// random user
+// random monitoring.
+// portable build?
 var Berf;
 (function (Berf) {
     var performance = window.performance || {};
@@ -176,7 +180,7 @@ var Berf;
 
         BerfCookie.value = function (name) {
             var json = BerfCookie.getCookie(name);
-            var value = JSON.parse(json);
+            var value = json === "" ? {} : JSON.parse(json);
 
             return value;
         };
@@ -232,16 +236,13 @@ var Berf;
 })(Berf || (Berf = {}));
 
 var berf = new Berf.Logger();
-
 //declare var XMLHttpRequest;
-var req = new XMLHttpRequest;
-var baseSend = req.send;
-req.send = function () {
-    berf.logResources();
-    console.log("send");
-    return baseSend.apply(req, arguments);
-};
-window["XMLHttpRequest"] = function () {
-    return req;
-};
+//var req = new XMLHttpRequest;
+//var baseSend = req.send;
+//req.send = () => {
+//    berf.logResources();
+//    console.log("send");
+//    return baseSend.apply(req, arguments);
+//};
+//window["XMLHttpRequest"] = () => { return req; };
 //# sourceMappingURL=Berf.js.map

@@ -41,7 +41,7 @@ type BerfStopwatchAttribute() =
 
     let createCookie(name: string) (value: string) =
         let cookie = new HttpCookie(name)
-        cookie.Expires <- (DateTime.Now.AddMinutes 1.0)
+//        cookie.Expires <- (DateTime.Now.AddMinutes 1.0)
         cookie.Value <- value
         cookie
 

@@ -3,6 +3,10 @@
 // build script
 // minify
 // log mvc timing on ajax calls
+// specific users
+// random user
+// random monitoring.
+// portable build?
 
 
 module Berf {
@@ -168,7 +172,7 @@ module Berf {
 
         private static value(name: string) {
             var json = BerfCookie.getCookie(name);
-            var value = JSON.parse(json);
+            var value = json === "" ? {} : JSON.parse(json);
 
             return value;
         }
@@ -245,11 +249,11 @@ module Berf {
 var berf = new Berf.Logger();
 
 //declare var XMLHttpRequest;
-var req = new XMLHttpRequest;
-var baseSend = req.send;
-req.send = () => {
-    berf.logResources();
-    console.log("send");
-    return baseSend.apply(req, arguments);
-};
-window["XMLHttpRequest"] = () => { return req; };
+//var req = new XMLHttpRequest;
+//var baseSend = req.send;
+//req.send = () => {
+//    berf.logResources();
+//    console.log("send");
+//    return baseSend.apply(req, arguments);
+//};
+//window["XMLHttpRequest"] = () => { return req; };
