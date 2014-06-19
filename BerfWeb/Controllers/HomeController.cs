@@ -10,7 +10,7 @@ namespace BerfWeb.Controllers
     {
         public ActionResult Index()
         {
-            return View();
+            return this.View();
         }
 
         public ActionResult About()
@@ -27,9 +27,8 @@ namespace BerfWeb.Controllers
             return View();
         }
 
-        public JsonResult SomeJson()
+        public ActionResult SomeJson()
         {
-            Thread.Sleep(1000);
             return this.Json("here we go", JsonRequestBehavior.AllowGet);
         }
     }

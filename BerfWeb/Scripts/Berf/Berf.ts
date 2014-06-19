@@ -1,28 +1,29 @@
 ﻿module Berf {
+    var performance = window.performance || <any>{};
+
     export class Logger {
         Timeout = 5000;
         Url: string;
         Queue: Array<any>;
-        Sent: Array<any>;
 
         constructor() {
             this.Queue = [];
-            this.Sent = [];
-            var tag = document.querySelector('[berf-url]');
+            var tag = document.querySelector ? document.querySelector('[berf-url]') : <any>{ getAttribute: function () { } };
             this.Url = tag.getAttribute("berf-url");
+            var addEventListener = typeof window.addEventListener === "undefined" ? function () { } : window.addEventListener;
 
-            window.addEventListener("beforeunload", (e: BeforeUnloadEvent) => {
+            addEventListener("beforeunload", (e: BeforeUnloadEvent) => {
                 this.onBeforeUnload(e);
             });
 
-            window.addEventListener("load", (e: UIEvent) => {
+            addEventListener("load", (e: UIEvent) => {
                 this.onLoad(e);
             });
         }
 
         logResources() {
-            if (typeof window.performance.getEntriesByType === "function") {
-                var resources = window.performance.getEntriesByType("resource");
+            if (typeof performance.getEntriesByType === "function") {
+                var resources = performance.getEntriesByType("resource");
                 if (resources.length > 0) {
                     for (var i = 0; i < resources.length; i++) {
                         var resource = resources[i];
@@ -34,8 +35,8 @@
         }
 
         log() {
-            if (typeof window.performance.getEntriesByType === "function") {
-                var timing2 = window.performance.getEntriesByType("navigation");
+            if (typeof performance.getEntriesByType === "function") {
+                var timing2 = performance.getEntriesByType("navigation");
                 if (timing2.length > 0) {
                     timing2[0]["BerfType"] = 2;
                     this.enqueue(timing2[0]);
@@ -44,37 +45,44 @@
                 this.logResources();
             }
 
-            if (typeof window.performance.timing === "object") {
-                var timing1 = new Navigation(window.performance.timing);
+            if (typeof performance.timing === "object") {
+                var timing1 = new Navigation(performance.timing);
                 timing1["BerfType"] = 1;
                 this.enqueue(timing1);
             }
         }
 
         onLoad(e: UIEvent) {
-            this.log();
-            this.send();
         }
 
         onBeforeUnload(e: BeforeUnloadEvent) {
             this.log();
-            this.send();
+            this.send(false);
         }
 
-        send(queue: Array<any> = this.Queue) {
+        send(async: boolean = true, queue: Array<any> = this.Queue) {
             if (queue.length > 0) {
-                this.post(queue);
+                this.post(this.Url, queue, async);
             }
         }
 
         enqueue(data) {
-            var extended = this.extend(data, BerfCookie.value());
+            // TODO: switch depending on resource type and get appropriate cookie data.
+            //if (data.initiatorType === "xmlhttprequest") {
+            //    //data = this.extend(data, BerfCookie.XmlHttpRequest(data.name, data.ServerStartDt));
+            //} else {
+            //if (data.entryType === "navigation") {
+            //    data = this.extend(data, BerfCookie.Navigation());
+            //    }
+            //}
+            //if (data.BerfType === 1) {
+            data = this.extend(data, BerfCookie.Navigation());
+            //}
 
-            var inQueue = this.contains(this.Queue, extended);
-            var isSent = this.contains(this.Sent, extended);
+            var inQueue = this.contains(this.Queue, data);
 
-            if (!inQueue && !isSent) {
-                this.Queue.push(extended);
+            if (!inQueue) {
+                this.Queue.push(data);
             }
         }
 
@@ -110,16 +118,17 @@
             return true;
         }
 
-        post(data: any) {
+        post(url: string, data: any, async: boolean = true) {
             var json = JSON.stringify(data);
             var http = new XMLHttpRequest();
 
-            http.open("POST", this.Url, true);
+            http.open("POST", url, async);
 
             http.setRequestHeader("Content-type", "application/json;charset=UTF-8");
-
-            http.upload.addEventListener("error", (e) => { throw e; }, false);
-            http.upload.addEventListener("progress", (e: ProgressEvent) => {
+            http.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+            var upload = http.upload || <any>{ addEventListener: function () { } };
+            upload.addEventListener("error", (e) => { throw e; }, false);
+            upload.addEventListener("progress", (e: ProgressEvent) => {
                 this.onSuccess(e);
             }, false);
 
@@ -127,9 +136,6 @@
         }
 
         onSuccess(e: ProgressEvent) {
-            for (var i = 0; i < this.Queue.length; i++) {
-                this.Sent.push(this.Queue[i]);
-            }
             this.Queue = [];
         }
 
@@ -143,8 +149,18 @@
     }
 
     export class BerfCookie {
-        static value() {
-            var json = BerfCookie.getCookie("berfData");
+        static XmlHttpRequest(uri: string, serverStartDt: string): Array<any> {
+            var value = BerfCookie.value("berf." + uri + "." + serverStartDt);
+
+            return value;
+        }
+
+        static Navigation(): any {
+            return BerfCookie.value("berf.navigation");
+        }
+
+        private static value(name: string) {
+            var json = BerfCookie.getCookie(name);
             var value = JSON.parse(json);
 
             return value;
@@ -167,6 +183,7 @@
         unloadEventEnd: number;
         redirectStart: number;
         redirectEnd: number;
+        redirectCount: number;
         fetchStart: number;
         domainLookupStart: number;
         domainLookupEnd: number;
@@ -186,7 +203,7 @@
 
         constructor(nav?: any) {
             if (!nav) {
-                nav = window.performance.timing;
+                nav = performance.timing;
             }
             this.navigationStart = this.delta(nav.navigationStart, nav.navigationStart);
             this.unloadEventStart = this.delta(nav.navigationStart, nav.unloadEventStart);
@@ -209,6 +226,7 @@
             this.domComplete = this.delta(nav.navigationStart, nav.domComplete);
             this.loadEventStart = this.delta(nav.navigationStart, nav.loadEventStart);
             this.loadEventEnd = this.delta(nav.navigationStart, nav.loadEventEnd);
+            this.redirectCount = nav.redirectCount;
         }
 
         delta(tZero: number, n: number) {

@@ -1,5 +1,7 @@
 ﻿var Berf;
 (function (Berf) {
+    var performance = window.performance || {};
+
     var Logger = (function () {
         function Logger() {
             var _this = this;
@@ -12,21 +14,23 @@
                 return toExtend;
             };
             this.Queue = [];
-            this.Sent = [];
-            var tag = document.querySelector('[berf-url]');
+            var tag = document.querySelector ? document.querySelector('[berf-url]') : { getAttribute: function () {
+                } };
             this.Url = tag.getAttribute("berf-url");
+            var addEventListener = typeof window.addEventListener === "undefined" ? function () {
+            } : window.addEventListener;
 
-            window.addEventListener("beforeunload", function (e) {
+            addEventListener("beforeunload", function (e) {
                 _this.onBeforeUnload(e);
             });
 
-            window.addEventListener("load", function (e) {
+            addEventListener("load", function (e) {
                 _this.onLoad(e);
             });
         }
         Logger.prototype.logResources = function () {
-            if (typeof window.performance.getEntriesByType === "function") {
-                var resources = window.performance.getEntriesByType("resource");
+            if (typeof performance.getEntriesByType === "function") {
+                var resources = performance.getEntriesByType("resource");
                 if (resources.length > 0) {
                     for (var i = 0; i < resources.length; i++) {
                         var resource = resources[i];
@@ -38,8 +42,8 @@
         };
 
         Logger.prototype.log = function () {
-            if (typeof window.performance.getEntriesByType === "function") {
-                var timing2 = window.performance.getEntriesByType("navigation");
+            if (typeof performance.getEntriesByType === "function") {
+                var timing2 = performance.getEntriesByType("navigation");
                 if (timing2.length > 0) {
                     timing2[0]["BerfType"] = 2;
                     this.enqueue(timing2[0]);
@@ -48,38 +52,46 @@
                 this.logResources();
             }
 
-            if (typeof window.performance.timing === "object") {
-                var timing1 = new Navigation(window.performance.timing);
+            if (typeof performance.timing === "object") {
+                var timing1 = new Navigation(performance.timing);
                 timing1["BerfType"] = 1;
                 this.enqueue(timing1);
             }
         };
 
         Logger.prototype.onLoad = function (e) {
-            this.log();
-            this.send();
         };
 
         Logger.prototype.onBeforeUnload = function (e) {
             this.log();
-            this.send();
+            this.send(false);
         };
 
-        Logger.prototype.send = function (queue) {
+        Logger.prototype.send = function (async, queue) {
+            if (typeof async === "undefined") { async = true; }
             if (typeof queue === "undefined") { queue = this.Queue; }
             if (queue.length > 0) {
-                this.post(queue);
+                this.post(this.Url, queue, async);
             }
         };
 
         Logger.prototype.enqueue = function (data) {
-            var extended = this.extend(data, BerfCookie.value());
+            // TODO: switch depending on resource type and get appropriate cookie data.
+            //if (data.initiatorType === "xmlhttprequest") {
+            //    //data = this.extend(data, BerfCookie.XmlHttpRequest(data.name, data.ServerStartDt));
+            //} else {
+            //if (data.entryType === "navigation") {
+            //    data = this.extend(data, BerfCookie.Navigation());
+            //    }
+            //}
+            //if (data.BerfType === 1) {
+            data = this.extend(data, BerfCookie.Navigation());
 
-            var inQueue = this.contains(this.Queue, extended);
-            var isSent = this.contains(this.Sent, extended);
+            //}
+            var inQueue = this.contains(this.Queue, data);
 
-            if (!inQueue && !isSent) {
-                this.Queue.push(extended);
+            if (!inQueue) {
+                this.Queue.push(data);
             }
         };
 
@@ -115,19 +127,22 @@
             return true;
         };
 
-        Logger.prototype.post = function (data) {
+        Logger.prototype.post = function (url, data, async) {
             var _this = this;
+            if (typeof async === "undefined") { async = true; }
             var json = JSON.stringify(data);
             var http = new XMLHttpRequest();
 
-            http.open("POST", this.Url, true);
+            http.open("POST", url, async);
 
             http.setRequestHeader("Content-type", "application/json;charset=UTF-8");
-
-            http.upload.addEventListener("error", function (e) {
+            http.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+            var upload = http.upload || { addEventListener: function () {
+                } };
+            upload.addEventListener("error", function (e) {
                 throw e;
             }, false);
-            http.upload.addEventListener("progress", function (e) {
+            upload.addEventListener("progress", function (e) {
                 _this.onSuccess(e);
             }, false);
 
@@ -135,9 +150,6 @@
         };
 
         Logger.prototype.onSuccess = function (e) {
-            for (var i = 0; i < this.Queue.length; i++) {
-                this.Sent.push(this.Queue[i]);
-            }
             this.Queue = [];
         };
         return Logger;
@@ -147,8 +159,18 @@
     var BerfCookie = (function () {
         function BerfCookie() {
         }
-        BerfCookie.value = function () {
-            var json = BerfCookie.getCookie("berfData");
+        BerfCookie.XmlHttpRequest = function (uri, serverStartDt) {
+            var value = BerfCookie.value("berf." + uri + "." + serverStartDt);
+
+            return value;
+        };
+
+        BerfCookie.Navigation = function () {
+            return BerfCookie.value("berf.navigation");
+        };
+
+        BerfCookie.value = function (name) {
+            var json = BerfCookie.getCookie(name);
             var value = JSON.parse(json);
 
             return value;
@@ -171,7 +193,7 @@
     var Navigation = (function () {
         function Navigation(nav) {
             if (!nav) {
-                nav = window.performance.timing;
+                nav = performance.timing;
             }
             this.navigationStart = this.delta(nav.navigationStart, nav.navigationStart);
             this.unloadEventStart = this.delta(nav.navigationStart, nav.unloadEventStart);
@@ -194,6 +216,7 @@
             this.domComplete = this.delta(nav.navigationStart, nav.domComplete);
             this.loadEventStart = this.delta(nav.navigationStart, nav.loadEventStart);
             this.loadEventEnd = this.delta(nav.navigationStart, nav.loadEventEnd);
+            this.redirectCount = nav.redirectCount;
         }
         Navigation.prototype.delta = function (tZero, n) {
             return n === 0 ? 0 : n - tZero;

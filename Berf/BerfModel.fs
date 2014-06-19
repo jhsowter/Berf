@@ -28,6 +28,7 @@ type Packet =
       actionTime: System.Double;
       viewTime: System.Double;
       unloadEventEnd: System.Double;
+      name: string;
       linkNegotiationStart: System.Double;
       linkNegotiationEnd: System.Double;
       redirectStart: System.Double;
@@ -35,9 +36,13 @@ type Packet =
       fetchStart: System.Double;
       domainLookupStart: System.Double;
       domainLookupEnd: System.Double;
+      duration: System.Double;
+      entryType: string;
+      initiatorType: string;
       connectStart: System.Double;
       connectEnd: System.Double;
       secureConnectionStart: System.Double;
+      startTime: System.Double;
       requestStart: System.Double;
       responseStart: System.Double;
       responseEnd: System.Double;
@@ -50,7 +55,7 @@ type Packet =
       loadEventEnd: System.Double;
       prerenderSwitch: System.Double
       ``type``: string;
-      redirectCount: System.Int32 }
+      redirectCount: System.Double }
 
 [<CLIMutable>]
 type HttpSummary =

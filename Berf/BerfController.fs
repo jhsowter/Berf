@@ -99,34 +99,54 @@ type BerfController() =
         let berfTimer =
             new EntityConnection.ServiceTypes.BerfTimer(
                 BerfTimerId = Guid.NewGuid(),
-                BerfSessionId = berfPacket.berfSessionId,
-                EventDt = nullable DateTime.UtcNow, BerfType = nullable 1,
-                SigTestId = String.Empty, SigId = berfPacket.url,
+
+                // Server side things from now
+                ClientSigVer = other.ClientSigVer, 
+                ClientSig = String.Empty,
+                Server = other.Server, 
+                IP = other.IP, 
+                UserId = other.AuthUser,
+                Browser = other.Browser, 
+                BrowserVersion = other.BrowserVersion,
+                UserAgentString = other.UserAgentString,
+                Url = other.ClientSigVer,
+                EventDt = nullable DateTime.UtcNow, 
+                SigTestId = String.Empty, 
+
+                // Server side things from cookie - that is, on original page load or ajax call. 
+                SigId = berfPacket.url,
+                BerfType = nullable (System.Int32.Parse berfPacket.berfType),
                 ControllerAction = berfPacket.area
                                     + berfPacket.controller
                                     + berfPacket.action,
                 ActionTime = nullable berfPacket.actionTime,
+                BerfSessionId = berfPacket.berfSessionId,
                 ViewTime = nullable berfPacket.viewTime,
-                Count = nullable 1, ServerEventDt = "", BrowserEventDt = "",
-                ClientSigVer = other.ClientSigVer, ClientSig = String.Empty,
-                Server = other.Server, IP = other.IP, UserId = other.AuthUser,
-                Browser = other.Browser, BrowserVersion = other.BrowserVersion,
-                UserAgentString = other.UserAgentString,
-                Url = other.ClientSigVer,
-                navigationStart = berfPacket.navigationStart,
-                unloadEventStart = berfPacket.unloadEventStart,
-                unloadEventEnd = berfPacket.unloadEventEnd,
-                redirectStart = berfPacket.redirectStart,
-                redirectEnd = berfPacket.redirectEnd,
-                fetchStart = berfPacket.fetchStart,
-                domainLookupStart = berfPacket.domainLookupStart,
-                domainLookupEnd = berfPacket.domainLookupEnd,
+//                Count = nullable berfPacket.redirectCount, 
+                ServerEventDt = "", 
+                BrowserEventDt = "",
+
+                // Client side
                 connectStart = berfPacket.connectStart,
                 connectEnd = berfPacket.connectEnd,
-                secureConnectionStart = berfPacket.secureConnectionStart,
-                requestStart = berfPacket.redirectStart,
-                responseStart = berfPacket.requestStart,
+                domainLookupStart = berfPacket.domainLookupStart,
+                domainLookupEnd = berfPacket.domainLookupEnd,
+                duration = berfPacket.duration,
+                entryType = berfPacket.entryType,
+                fetchStart = berfPacket.fetchStart,
+                initiatorType = berfPacket.initiatorType,
+                name = berfPacket.name,
+                navigationStart = berfPacket.navigationStart, // API 1
+                redirectStart = berfPacket.redirectStart,
+                redirectEnd = berfPacket.redirectEnd,
+                requestStart = berfPacket.requestStart,
+                responseStart = berfPacket.responseEnd,
                 responseEnd = berfPacket.responseEnd,
+                redirectCount = berfPacket.redirectCount,
+                secureConnectionStart = berfPacket.secureConnectionStart,
+                startTime = berfPacket.startTime,
+                unloadEventStart = berfPacket.unloadEventStart,
+                unloadEventEnd = berfPacket.unloadEventEnd,
                 domLoading = berfPacket.domLoading,
                 domInteractive = berfPacket.domInteractive,
                 domContentLoadedEventStart = berfPacket.domContentLoadedEventStart,
@@ -134,6 +154,7 @@ type BerfController() =
                 domComplete = berfPacket.domComplete,
                 loadEventStart = berfPacket.loadEventStart,
                 loadEventEnd = berfPacket.loadEventEnd)
+
         berfTimer
 
 
@@ -209,7 +230,7 @@ type BerfController() =
         let other = getOther this.HttpContext
         let context = EntityConnection.GetDataContext()
         let fullContext = context.DataContext
-        let berfTimers = model |> Seq.map (fun m -> getBerfTimers m other)
+        let berfTimers = model |> Seq.map (fun m -> toBerfTimer_1 m other)
         for i in berfTimers do
             fullContext.AddObject("BerfTimer", i)
         fullContext.CommandTimeout <- nullable 1000
