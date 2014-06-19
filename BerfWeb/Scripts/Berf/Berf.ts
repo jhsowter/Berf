@@ -1,4 +1,11 @@
-﻿module Berf {
+﻿// TODO: 
+// Nuget package
+// build script
+// minify
+// log mvc timing on ajax calls
+
+
+module Berf {
     var performance = window.performance || <any>{};
 
     export class Logger {

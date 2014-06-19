@@ -11,10 +11,6 @@ open System.Data.Linq
 open Microsoft.FSharp.Data.TypeProviders
 open Microsoft.FSharp.Linq
 
-type BerfMeta =
-    { IsOK : bool
-      Message : string }
-
 [<CLIMutable>]
 type Packet = 
     { berfType : string;
@@ -113,22 +109,6 @@ type TimingResource =
       responseStart : System.Double
       startTime : System.Double }
 
-//connectEnd                            : 1.6406110861237808
-//connectStart                          : 1.6406110861237808
-//domainLookupEnd                       : 1.6406110861237808
-//domainLookupStart                     : 1.6406110861237808
-//duration                              : 0.5149737834272623
-//entryType                             : "resource"
-//fetchStart                            : 1.6406110861237808
-//initiatorType                         : "link"
-//name                                  : "http://localhost:48213/Content/css?v=m8KdMFOCcNeZrATLbCQ_9gxex1_Ma7rE5iJzJXojUIk1"
-//redirectEnd                           : 0
-//redirectStart                         : 0
-//requestStart                          : 1.6406110861237808
-//responseEnd                               : 1.7239245469830566
-//responseStart                         : 1.6406110861237808
-//startTime                                 : 1.2089507635557943
-
 [<CLIMutable>]
 type PerformanceNavigation =
     { ``type`` : int16
@@ -145,13 +125,3 @@ type BerfSession =
       actionTime : float
       viewTime : float 
       }
-
-[<CLIMutable>]
-type BerfPerfPacket =
-    { berfSessionId : string
-      url : string
-      browserEventDt : string
-      timing : Timing
-      navigation : PerformanceNavigation
-      berfSession : BerfSession
-      timingResources : TimingResource [] }

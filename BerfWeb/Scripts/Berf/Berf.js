@@ -1,4 +1,9 @@
-﻿var Berf;
+﻿// TODO:
+// Nuget package
+// build script
+// minify
+// log mvc timing on ajax calls
+var Berf;
 (function (Berf) {
     var performance = window.performance || {};
 
