@@ -38,7 +38,8 @@ module Berf {
                 if (resources.length > 0) {
                     for (var i = 0; i < resources.length; i++) {
                         var resource = resources[i];
-                        resource["BerfType"] = 2;
+                        resource["Source"] = "navigation 2";
+                        resource["Url"] = window.location.toString();
                         this.enqueue(resource);
                     }
                 }
@@ -49,7 +50,8 @@ module Berf {
             if (typeof performance.getEntriesByType === "function") {
                 var timing2 = performance.getEntriesByType("navigation");
                 if (timing2.length > 0) {
-                    timing2[0]["BerfType"] = 2;
+                    timing2[0]["Source"] = "navigation 2";
+                    timing2[0]["Url"] = window.location.toString();
                     this.enqueue(timing2[0]);
                 }
 
@@ -58,7 +60,8 @@ module Berf {
 
             if (typeof performance.timing === "object") {
                 var timing1 = new Navigation(performance.timing);
-                timing1["BerfType"] = 1;
+                timing1["Source"] = "navigation 1";
+                timing1["Url"] = window.location.toString();
                 this.enqueue(timing1);
             }
         }
@@ -87,7 +90,7 @@ module Berf {
             //    }
             //}
             //if (data.BerfType === 1) {
-            data = this.extend(data, BerfCookie.Navigation());
+            //data = this.extend(data, BerfCookie.Navigation());
             //}
 
             var inQueue = this.contains(this.Queue, data);
@@ -212,6 +215,9 @@ module Berf {
         loadEventStart: number;
         loadEventEnd: number;
 
+        duration: number;
+        startTime: number;
+
         constructor(nav?: any) {
             if (!nav) {
                 nav = performance.timing;
@@ -238,6 +244,9 @@ module Berf {
             this.loadEventStart = this.delta(nav.navigationStart, nav.loadEventStart);
             this.loadEventEnd = this.delta(nav.navigationStart, nav.loadEventEnd);
             this.redirectCount = nav.redirectCount;
+            // The duration attribute MUST return a DOMHighResTimeStamp equal to the difference between loadEventEnd and startTime, respectively.
+            this.startTime = this.navigationStart;
+            this.duration = this.loadEventEnd - this.navigationStart;
         }
 
         delta(tZero: number, n: number) {

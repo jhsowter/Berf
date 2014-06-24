@@ -18,7 +18,8 @@ open System.Xml
 open System.Text
 open FSharp.Data
 
-type Simple =  JsonProvider<"""{"responseEnd" : 10973.99999992922,"responseStart" : 10972.000000067055,"requestStart" : 9908.999999985099,"secureConnectionStart" : 0,"connectEnd" : 9905.999999959022,"connectStart" : 9905.999999959022,"domainLookupEnd" : 9905.999999959022,"domainLookupStart" : 9905.999999959022,"fetchStart" : 9905.999999959022,"redirectEnd" : 0,		"redirectStart" : 0,"initiatorType" : "xmlhttprequest",		"duration" : 1067.9999999701977,		"startTime" : 9905.999999959022,		"entryType" : "resource",		"name" : "http://devteam3/Berf/Home/SomeJson",		"BerfType" : 2,		"actionTime" : 1015,		"action" : "SomeJson.",		"area" : "",		"berfSessionId" : "00000000-0000-0000-0000-000000000000",		"controller" : "Home.",		"serverEndDt" : "2014-06-19T10:34:39.863Z",		"serverStartDt" : "2014-06-19T10:34:38.847Z",		"viewTime" : 12}""">                 
+//type Simple =  JsonProvider<"""{"responseEnd" : 10973.99999992922,"responseStart" : 10972.000000067055,"requestStart" : 9908.999999985099,"secureConnectionStart" : 0,"connectEnd" : 9905.999999959022,"connectStart" : 9905.999999959022,"domainLookupEnd" : 9905.999999959022,"domainLookupStart" : 9905.999999959022,"fetchStart" : 9905.999999959022,"redirectEnd" : 0,		"redirectStart" : 0,"initiatorType" : "xmlhttprequest",		"duration" : 1067.9999999701977,		"startTime" : 9905.999999959022,		"entryType" : "resource",		"name" : "http://devteam3/Berf/Home/SomeJson",		"BerfType" : 2,		"actionTime" : 1015,		"action" : "SomeJson.",		"area" : "",		"berfSessionId" : "00000000-0000-0000-0000-000000000000",		"controller" : "Home.",		"serverEndDt" : "2014-06-19T10:34:39.863Z",		"serverStartDt" : "2014-06-19T10:34:38.847Z",		"viewTime" : 12}""">                 
+
 
 type BerfStopwatchAttribute() =
     inherit ActionFilterAttribute()
@@ -85,67 +86,37 @@ type BerfStopwatchAttribute() =
         let request = httpContext.Request
         let headers = request.Headers
 
-        let hds =
-            headers.AllKeys
-            |> Seq.map (fun key -> key, headers.[key])
-            |> Map.ofSeq
+        // get from cookie
+        let cookieValue = if request.Cookies.["berf"] = null then Guid.Empty.ToString() else request.Cookies.["berf"].Value
+        let mutable berfSessionId: Guid = Guid.Empty
+        if (httpContext.PreviousHandler = null && not (request.IsAjaxRequest())) then
+            berfSessionId <- Guid.NewGuid()
+        else
+            berfSessionId <- Guid.Parse(cookieValue)
 
-        let test (hds : Map<string, string>) key =
-            let hasKey = hds.ContainsKey "Content-Type"
-            if hasKey then Map.find "Content-Type" hds
-            else String.Empty
+        let cookie = createCookie "berf" (berfSessionId.ToString())
+        response.Cookies.Add(cookie)
 
-        let contentType = test hds "Content-Type"
-//        let isAjaxCall = contentType.Contains("application/json")
-        let isAjaxCall = headers.["X-Requested-With"] = "XMLHttpRequest"
+        let context = EntityConnection.GetDataContext()
+        let metric = new EntityConnection.ServiceTypes.MVC(MVCID = Guid.NewGuid(),
+            Action = (string)filterContext.RouteData.Values.["action"],
+            Controller = (string)filterContext.RouteData.Values.["controller"],
+            Area = (string) filterContext.RouteData.DataTokens.["area"],
+            ActionStart = _actionStart,
+            ActionEnd = _actionEnd,
+            ResultStart = _resultStart,
+            ResultEnd = _resultEnd,
+            ActionDuration = (float) _actionStopwatch.ElapsedMilliseconds,
+            ResultDuration = (float) _resultStopwatch.ElapsedMilliseconds,
+            BerfSessionID = berfSessionId,
+            Created = DateTime.UtcNow,
+            UserName = httpContext.User.Identity.Name,
+            ClientIPAddress = request.UserHostAddress,
+            UserAgent = request.UserAgent,
+            HostMachineName = httpContext.Server.MachineName)
 
+        context.MVC.AddObject metric
 
-        let startt = _actionStart.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffK")
-        let endt = _actionEnd.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffK")
+        context.DataContext.SaveChanges()
 
-        let getValueFrom (col:Routing.RouteValueDictionary)  key =
-            let hasKey = col.ContainsKey key
-            if hasKey then 
-                let x = filterContext.RouteData.Values.Item key
-                x.ToString()
-            else String.Empty
-
-        let areaName = getValueFrom filterContext.RouteData.Values  "area"
-        let controllerName = getValueFrom filterContext.RouteData.Values  "controller" + "."  
-        let actionName = getValueFrom filterContext.RouteData.Values  "action" + "."
-
-
-        
-//        if isAjaxCall then
-//            let cookieValue = request.Cookies.["berf.navigation"].Value
-//            let jo = Simple.Parse(cookieValue);
-//
-//            let berfSession = { berfSessionId = jo.BerfSessionId.ToString();
-//                    serverStartDt = startt;
-//                    serverEndDt = endt;
-//                    area = areaName;
-//                    controller = controllerName;
-//                    action = actionName;
-//                    actionTime = actionTime;
-//                    viewTime = viewTime }
-
-            //let cookieValue = json berfSession
-
-//            let ajaxCookie = createCookie ("berf." + request.Url.AbsoluteUri + "." + (json startt)) cookieValue
-//            response.Cookies.Add(ajaxCookie)
-
-        if isAjaxCall = false then
-            let berfSessionId = Guid.NewGuid().ToString()
-            let berfSession = { berfSessionId = berfSessionId.ToString();
-                    serverStartDt = startt;
-                    serverEndDt = endt;
-                    area = areaName;
-                    controller = controllerName;
-                    action = actionName;
-                    actionTime = actionTime;
-                    viewTime = viewTime }
-            let cookieValue = json berfSession
-            let cookie = createCookie "berf.navigation" cookieValue
-            response.Cookies.Add(cookie)
-        
         ()

@@ -11,18 +11,14 @@ open System.Data.Linq
 open Microsoft.FSharp.Data.TypeProviders
 open Microsoft.FSharp.Linq
 
+type internal EntityConnection = SqlEntityConnection< "data source=.\SQLSERVER2012;Initial Catalog=Berf;Integrated Security=SSPI;" >
+
 [<CLIMutable>]
 type Packet = 
-    { berfType : string;
-        berfSessionId: string;
+    { source : string;
         navigationStart: System.Double;
       unloadEventStart: System.Double;
       url: string;
-      area: string;
-      controller: string;
-      action: string;
-      actionTime: System.Double;
-      viewTime: System.Double;
       unloadEventEnd: System.Double;
       name: string;
       linkNegotiationStart: System.Double;
@@ -50,8 +46,7 @@ type Packet =
       loadEventStart: System.Double;
       loadEventEnd: System.Double;
       prerenderSwitch: System.Double
-      ``type``: string;
-      redirectCount: System.Double }
+      redirectCount: int }
 
 [<CLIMutable>]
 type HttpSummary =
