@@ -79,17 +79,6 @@
         };
 
         Logger.prototype.enqueue = function (data) {
-            // TODO: switch depending on resource type and get appropriate cookie data.
-            //if (data.initiatorType === "xmlhttprequest") {
-            //    //data = this.extend(data, BerfCookie.XmlHttpRequest(data.name, data.ServerStartDt));
-            //} else {
-            //if (data.entryType === "navigation") {
-            //    data = this.extend(data, BerfCookie.Navigation());
-            //    }
-            //}
-            //if (data.BerfType === 1) {
-            //data = this.extend(data, BerfCookie.Navigation());
-            //}
             var inQueue = this.contains(this.Queue, data);
 
             if (!inQueue) {
@@ -234,19 +223,9 @@
 
 try  {
     var berf = new Berf.Logger();
-    throw "ah";
 } catch (ex) {
     if (typeof console === "object" && typeof console.log === "function") {
         console.log(ex);
     }
 }
-//declare var XMLHttpRequest;
-//var req = new XMLHttpRequest;
-//var baseSend = req.send;
-//req.send = () => {
-//    berf.logResources();
-//    console.log("send");
-//    return baseSend.apply(req, arguments);
-//};
-//window["XMLHttpRequest"] = () => { return req; };
 //# sourceMappingURL=Berf.js.map
