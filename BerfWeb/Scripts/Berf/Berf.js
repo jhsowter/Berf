@@ -2,10 +2,6 @@
 // Nuget package
 // build script
 // minify
-// log mvc timing on ajax calls
-// specific users
-// random user
-// random monitoring.
 // portable build?
 var Berf;
 (function (Berf) {
@@ -241,7 +237,14 @@ var Berf;
     Berf.Navigation = Navigation;
 })(Berf || (Berf = {}));
 
-var berf = new Berf.Logger();
+try  {
+    var berf = new Berf.Logger();
+    throw "ah";
+} catch (ex) {
+    if (typeof console === "object" && typeof console.log === "function") {
+        console.log(ex);
+    }
+}
 //declare var XMLHttpRequest;
 //var req = new XMLHttpRequest;
 //var baseSend = req.send;
