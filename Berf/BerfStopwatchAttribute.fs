@@ -43,6 +43,7 @@ type BerfStopwatchAttribute() =
     let createCookie(name: string) (value: string) =
         let cookie = new HttpCookie(name)
         cookie.HttpOnly <- false
+        cookie.Secure <- false
         cookie.Value <- value
         cookie
 
@@ -90,12 +91,10 @@ type BerfStopwatchAttribute() =
         let cookieValue = if request.Cookies.["berf"] = null then Guid.Empty.ToString() else request.Cookies.["berf"].Value
         let mutable berfSessionId: Guid = Guid.Empty
         let isAjaxRequest = (headers.["X-Requested-With"] = "XMLHttpRequest")
-        if (httpContext.PreviousHandler = null && not isAjaxRequest) then
+        if (not isAjaxRequest && berfSessionId = Guid.Empty) then
             berfSessionId <- Guid.NewGuid()
         else
             berfSessionId <- Guid.Parse(cookieValue)
-
-        if not (berfSessionId = Guid.Empty) then berfSessionId <- Guid.NewGuid()
 
         let cookie = createCookie "berf" (berfSessionId.ToString())
         response.Cookies.Add(cookie)

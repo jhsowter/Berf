@@ -99,7 +99,7 @@ type BerfController() =
         
         let cookie = HttpContext.Current.Request.Cookies.["berf"];
         let berfSessionID = if cookie = null then Guid.Empty else Guid.Parse cookie.Value
-
+        
         let berfTimer =
             new EntityConnection.ServiceTypes.Client(
                 ClientID = Guid.NewGuid(),
@@ -155,11 +155,8 @@ type BerfController() =
         for metric in metrics do
             context.Client.AddObject metric
         fullContext.SaveChanges()
-//        let berfTimers = model |> Seq.map (fun m -> toBerfTimer_1 m other)
-//        for i in berfTimers do
-//            fullContext.AddObject("BerfTimer", i)
-//        fullContext.CommandTimeout <- nullable 1000
-//        fullContext.SaveChanges() |> printfn "Saved changes: %d object(s) modified."
-//
-//        this.Json(String.Empty, JsonRequestBehavior.AllowGet)
+
+        let cookie = HttpContext.Current.Response.Cookies.["berf"];
+        cookie.Value = Guid.Empty.ToString();
+
         ()

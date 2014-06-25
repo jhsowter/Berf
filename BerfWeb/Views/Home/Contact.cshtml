@@ -16,4 +16,5 @@
     <strong>Marketing:</strong> <a href="mailto:Marketing@example.com">Marketing@example.com</a>
 </address>
 
-@Html.Partial("_SomePartial")
+@{ Html.RenderPartial("_SomePartial"); }
+@{ Html.RenderAction("About"); }
