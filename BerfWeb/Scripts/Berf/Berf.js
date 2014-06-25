@@ -43,7 +43,7 @@ var Berf;
                 if (resources.length > 0) {
                     for (var i = 0; i < resources.length; i++) {
                         var resource = resources[i];
-                        resource["Source"] = "navigation 2";
+                        resource["Source"] = "Navigation2";
                         resource["Url"] = window.location.toString();
                         this.enqueue(resource);
                     }
@@ -55,7 +55,7 @@ var Berf;
             if (typeof performance.getEntriesByType === "function") {
                 var timing2 = performance.getEntriesByType("navigation");
                 if (timing2.length > 0) {
-                    timing2[0]["Source"] = "navigation 2";
+                    timing2[0]["Source"] = "Navigation2";
                     timing2[0]["Url"] = window.location.toString();
                     this.enqueue(timing2[0]);
                 }
@@ -65,7 +65,7 @@ var Berf;
 
             if (typeof performance.timing === "object") {
                 var timing1 = new Navigation(performance.timing);
-                timing1["Source"] = "navigation 1";
+                timing1["Source"] = "Navigation1";
                 timing1["Url"] = window.location.toString();
                 this.enqueue(timing1);
             }
