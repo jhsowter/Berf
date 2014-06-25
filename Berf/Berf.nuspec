@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Berf</id>
+    <version>1.0.0</version>
+    <title>Berf</title>
+    <authors>John Kennerley, Jack Sowter</authors>
+    <owners></owners>
+    <licenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</licenseUrl>
+    <projectUrl>http://PROJECT_URL_HERE_OR_DELETE_THIS_LINE</projectUrl>
+    <iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Performance monitoring for browsers with Navigation API and .net MVC websites. </description>
+    <releaseNotes>Currently Extreme Alpha Test Release 0.0.0.1 </releaseNotes>
+    <copyright>Copyright 2014</copyright>
+    <tags>Tag1 Tag2</tags>
+  </metadata>
+</package>
