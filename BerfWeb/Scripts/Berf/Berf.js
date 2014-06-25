@@ -1,9 +1,4 @@
-﻿// TODO:
-// Nuget package
-// build script
-// minify
-// portable build?
-var Berf;
+﻿var Berf;
 (function (Berf) {
     var performance = window.performance || {};
 

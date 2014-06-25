@@ -1,11 +1,4 @@
-﻿// TODO: 
-// Nuget package
-// build script
-// minify
-// portable build?
-
-
-module Berf {
+﻿module Berf {
     var performance = window.performance || <any>{};
 
     export class Logger {
