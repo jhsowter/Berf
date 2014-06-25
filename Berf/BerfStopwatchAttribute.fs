@@ -81,7 +81,6 @@ type BerfStopwatchAttribute() =
         let actionTime = Convert.ToDouble  _actionStopwatch.ElapsedMilliseconds
         let viewTime = Convert.ToDouble  _resultStopwatch.ElapsedMilliseconds
 
-
         let httpContext = filterContext.HttpContext
         let response = httpContext.Response
         let request = httpContext.Request
@@ -116,7 +115,11 @@ type BerfStopwatchAttribute() =
             UserName = httpContext.User.Identity.Name,
             ClientIPAddress = request.UserHostAddress,
             UserAgent = request.UserAgent,
-            HostMachineName = httpContext.Server.MachineName)
+            HostMachineName = httpContext.Server.MachineName,
+            Browser = httpContext.Request.Browser.Browser,
+            BrowserVersion = httpContext.Request.Browser.Version,
+            Headers = httpContext.Request.ServerVariables.["ALL_RAW"]
+            )
 
         context.MVC.AddObject metric
 

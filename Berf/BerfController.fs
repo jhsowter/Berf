@@ -113,6 +113,9 @@ type BerfController() =
                 Source = berfPacket.source,
                 BerfSessionID = berfSessionID,
                 Url = berfPacket.url,
+                Browser = httpContext.Request.Browser.Browser,
+                BrowserVersion = httpContext.Request.Browser.Version,
+
 
                 // Client side
                 connectStart = nullable berfPacket.connectStart,
