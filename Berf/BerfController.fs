@@ -145,14 +145,11 @@ type BerfController() =
 
         berfTimer
 
-    member this.Index() =
-        this.Json(String.Empty, JsonRequestBehavior.AllowGet)
-
-    member this.log (model : Packet[]) =
-        let cnString = "data source=.\SQLSERVER2012 ; Initial Catalog=Berf ; Integrated Security = SSPI;"
+    member this.Index (model : Packet[]) =
+        let cnString = Configuration.WebConfigurationManager.ConnectionStrings.["Berf"].ConnectionString
         
         let other = getOther this.HttpContext
-        let context = EntityConnection.GetDataContext()
+        let context = EntityConnection.GetDataContext(cnString)
         let fullContext = context.DataContext
         let metrics = model |> Seq.map (fun m -> createClient m HttpContext.Current)
         for metric in metrics do

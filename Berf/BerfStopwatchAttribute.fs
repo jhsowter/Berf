@@ -42,7 +42,7 @@ type BerfStopwatchAttribute() =
 
     let createCookie(name: string) (value: string) =
         let cookie = new HttpCookie(name)
-//        cookie.Expires <- (DateTime.Now.AddMinutes 1.0)
+        cookie.HttpOnly <- false
         cookie.Value <- value
         cookie
 
@@ -89,15 +89,19 @@ type BerfStopwatchAttribute() =
         // get from cookie
         let cookieValue = if request.Cookies.["berf"] = null then Guid.Empty.ToString() else request.Cookies.["berf"].Value
         let mutable berfSessionId: Guid = Guid.Empty
-        if (httpContext.PreviousHandler = null && not (request.IsAjaxRequest())) then
+        let isAjaxRequest = (headers.["X-Requested-With"] = "XMLHttpRequest")
+        if (httpContext.PreviousHandler = null && not isAjaxRequest) then
             berfSessionId <- Guid.NewGuid()
         else
             berfSessionId <- Guid.Parse(cookieValue)
 
+        if not (berfSessionId = Guid.Empty) then berfSessionId <- Guid.NewGuid()
+
         let cookie = createCookie "berf" (berfSessionId.ToString())
         response.Cookies.Add(cookie)
-
-        let context = EntityConnection.GetDataContext()
+        
+        let cnString = Configuration.WebConfigurationManager.ConnectionStrings.["Berf"].ConnectionString
+        let context = EntityConnection.GetDataContext(cnString)
         let metric = new EntityConnection.ServiceTypes.MVC(MVCID = Guid.NewGuid(),
             Action = (string)filterContext.RouteData.Values.["action"],
             Controller = (string)filterContext.RouteData.Values.["controller"],
