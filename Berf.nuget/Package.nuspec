@@ -14,7 +14,7 @@
     <copyright>Copyright 2014</copyright>
     <tags>Tag1 Tag2</tags>
     <dependencies>
-      <dependency id="FSharp.Core.Open.FS31" />
+      <dependency id="FSharp.Core" />
     </dependencies>
   </metadata>
 </package>
