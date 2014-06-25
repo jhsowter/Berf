@@ -59,7 +59,7 @@ type HttpSummary =
       AuthUser : String
       LogonUser : String
       ClientSigVer : String 
-      UserAgentString: String
+      UserAgent: String
       }
 
 [<CLIMutable>]
