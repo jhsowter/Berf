@@ -39,7 +39,7 @@
         $(function() {
             $("#clicker").on("click", function() {
                 alert("");
-                var ret = $.post("Home/SomeJson", {});
+                var ret = $.post("Home/SomeJson", JSON.stringify({data: 'data'}));
             });
 
         });

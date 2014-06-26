@@ -2,12 +2,14 @@
 
 open System
 open System.Collections.Generic
+open System.Configuration
 open System.Linq
 open System.Web
 open System.Web.Mvc
 open System.Web.Mvc.Ajax
 open System.Data
 open System.Data.Linq
+open System.Text.RegularExpressions
 open Microsoft.FSharp.Data.TypeProviders
 open Microsoft.FSharp.Linq
 open System.Diagnostics
@@ -97,9 +99,17 @@ type BerfStopwatchAttribute() =
 
         let cookie = createCookie "berf" (berfSessionId.ToString())
         response.Cookies.Add(cookie)
-        
+        let name = httpContext.User.Identity.Name
+        let username = (if String.IsNullOrEmpty(httpContext.User.Identity.AuthenticationType) then "<AuthenticationType is empty>" else name)
         let cnString = Configuration.WebConfigurationManager.ConnectionStrings.["Berf"].ConnectionString
         let context = EntityConnection.GetDataContext(cnString)
+
+        let m = Configuration.WebConfigurationManager.AppSettings.["Berf.PostLog"];
+        let regex = Regex m
+        httpContext.Request.InputStream.Seek(0L, SeekOrigin.Begin)
+        let streamReader = new StreamReader(httpContext.Request.InputStream)
+        let inputStream = (if (regex.Matches(request.Url.ToString()).Count > 0) then (streamReader.ReadToEnd()) else "-")
+
         let metric = new EntityConnection.ServiceTypes.MVC(MVCID = Guid.NewGuid(),
             Action = (string)filterContext.RouteData.Values.["action"],
             Controller = (string)filterContext.RouteData.Values.["controller"],
@@ -112,13 +122,15 @@ type BerfStopwatchAttribute() =
             ResultDuration = (float) _resultStopwatch.ElapsedMilliseconds,
             BerfSessionID = berfSessionId,
             Created = DateTime.UtcNow,
-            UserName = (if String.IsNullOrEmpty(httpContext.User.Identity.AuthenticationType) then "<AuthenticationType is empty>" else httpContext.User.Identity.Name),
+            UserName = username,
             ClientIPAddress = request.UserHostAddress,
             UserAgent = request.UserAgent,
             HostMachineName = httpContext.Server.MachineName,
             Browser = httpContext.Request.Browser.Browser,
             BrowserVersion = httpContext.Request.Browser.Version,
-            Headers = httpContext.Request.ServerVariables.["ALL_RAW"]
+            Headers = httpContext.Request.ServerVariables.["ALL_RAW"],
+            InputStream = inputStream,
+            Url = httpContext.Request.Url.ToString()
             )
 
         context.MVC.AddObject metric

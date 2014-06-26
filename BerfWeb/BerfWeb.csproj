@@ -147,8 +147,19 @@
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Scripts\Berf\Berf.js" />
+    <Content Include="Scripts\Berf\Berf.min.js">
+      <DependentUpon>Berf.js</DependentUpon>
+    </Content>
+    <Content Include="Scripts\Berf\_Berf.js" />
+    <Content Include="Scripts\Berf\__Berf.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Scripts\Berf\_Berf.js.map" />
+    <Content Include="Scripts\Berf\__Berf.js.map" />
+    <Content Include="Scripts\Berf\Berf.min.js.map">
+      <DependentUpon>Berf.min.js</DependentUpon>
+    </Content>
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\jquery-1.10.2.js" />
     <Content Include="Scripts\jquery-1.10.2.min.js" />

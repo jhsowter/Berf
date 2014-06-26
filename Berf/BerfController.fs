@@ -90,7 +90,7 @@ type BerfController() =
           AuthUser = authUser
           LogonUser = logonUser
           ClientSigVer = clientSigVer
-          UserAgentString = userAgentString }
+          UserAgent = userAgentString }
 
     // helper
     let nullable value = new System.Nullable<_>(value)
