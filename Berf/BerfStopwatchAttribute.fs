@@ -105,7 +105,7 @@ type BerfStopwatchAttribute() =
         let context = EntityConnection.GetDataContext(cnString)
 
         let m = Configuration.WebConfigurationManager.AppSettings.["Berf.PostLog"];
-        let regex = Regex m
+        let regex = Regex (if m = null then "\x00" else m)
         httpContext.Request.InputStream.Seek(0L, SeekOrigin.Begin)
         let streamReader = new StreamReader(httpContext.Request.InputStream)
         let inputStream = (if (regex.Matches(request.Url.ToString()).Count > 0) then (streamReader.ReadToEnd()) else "-")
