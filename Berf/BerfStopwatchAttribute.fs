@@ -105,10 +105,15 @@ type BerfStopwatchAttribute() =
         let context = EntityConnection.GetDataContext(cnString)
 
         let m = Configuration.WebConfigurationManager.AppSettings.["Berf.PostLog"];
-        let regex = Regex (if m = null then "\x00" else m)
+        let postRegex = Regex (if m = null then "\x00" else m)
+        
+        let log = Configuration.WebConfigurationManager.AppSettings.["Berf.Log"]
+        let logRegex = Regex (if log = null then ".*" else log)
+
         httpContext.Request.InputStream.Seek(0L, SeekOrigin.Begin)
         let streamReader = new StreamReader(httpContext.Request.InputStream)
-        let inputStream = (if (regex.Matches(request.Url.ToString()).Count > 0) then (streamReader.ReadToEnd()) else "-")
+
+        let inputStream = (if (postRegex.Matches(request.Url.ToString()).Count > 0) then (streamReader.ReadToEnd()) else "-")
 
         let metric = new EntityConnection.ServiceTypes.MVC(MVCID = Guid.NewGuid(),
             Action = (string)filterContext.RouteData.Values.["action"],
@@ -133,7 +138,7 @@ type BerfStopwatchAttribute() =
             Url = httpContext.Request.Url.ToString()
             )
 
-        context.MVC.AddObject metric
+        if (logRegex.Match(metric.Url).Success) then context.MVC.AddObject metric
 
         context.DataContext.SaveChanges()
 

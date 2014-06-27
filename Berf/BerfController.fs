@@ -8,6 +8,7 @@ open System.Web.Mvc
 open System.Web.Mvc.Ajax
 open System.Data
 open System.Data.Linq
+open System.Text.RegularExpressions
 open Microsoft.FSharp.Data.TypeProviders
 open Microsoft.FSharp.Linq
 open System
@@ -96,12 +97,10 @@ type BerfController() =
     let nullable value = new System.Nullable<_>(value)
 
     let createClient (berfPacket : Packet) (httpContext : HttpContext) : EntityConnection.ServiceTypes.Client =
-        
         let cookie = HttpContext.Current.Request.Cookies.["berf"];
         let berfSessionID = if cookie = null then Guid.Empty else Guid.Parse cookie.Value
         
-        let berfTimer =
-            new EntityConnection.ServiceTypes.Client(
+        let berfTimer = new EntityConnection.ServiceTypes.Client(
                 ClientID = Guid.NewGuid(),
                 Created = DateTime.UtcNow,
 
@@ -145,18 +144,23 @@ type BerfController() =
                 domComplete = nullable berfPacket.domComplete,
                 loadEventStart = nullable berfPacket.loadEventStart,
                 loadEventEnd = nullable berfPacket.loadEventEnd)
-
         berfTimer
 
     member this.Index (model : Packet[]) =
         let cnString = Configuration.WebConfigurationManager.ConnectionStrings.["Berf"].ConnectionString
-        
         let other = getOther this.HttpContext
         let context = EntityConnection.GetDataContext(cnString)
         let fullContext = context.DataContext
         let metrics = model |> Seq.map (fun m -> createClient m HttpContext.Current)
+
+        
+        let log = Configuration.WebConfigurationManager.AppSettings.["Berf.Log"]
+        let regex = Regex (if log = null then ".*" else log)
+
+
         for metric in metrics do
-            context.Client.AddObject metric
+            if regex.Match((if metric.name = null then metric.Url else metric.name)).Success then context.Client.AddObject metric
+        
         fullContext.SaveChanges()
 
         let cookie = HttpContext.Current.Response.Cookies.["berf"];
