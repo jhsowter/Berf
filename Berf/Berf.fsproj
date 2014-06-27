@@ -59,6 +59,7 @@
     <Compile Include="BerfModel.fs" />
     <Compile Include="BerfController.fs" />
     <Compile Include="BerfStopwatchAttribute.fs" />
+    <Compile Include="HttpModule.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

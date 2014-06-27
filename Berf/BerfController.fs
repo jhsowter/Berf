@@ -24,81 +24,12 @@ open System.Reflection
 type BerfController() =
     inherit Controller()
 
-    let getOther (httpContext : HttpContextBase)  =
-        let mutable server = String.Empty
-        let mutable browser = String.Empty
-        let mutable browserVersion = String.Empty
-        let mutable controller = String.Empty
-        let mutable action = String.Empty
-        let mutable ip = String.Empty
-        let mutable authUser = String.Empty
-        let mutable logonUser = String.Empty
-        let mutable clientSigVer = String.Empty
-        let mutable userAgentString = String.Empty
-
-        let response = httpContext.Response
-        let request = httpContext.Request
-        let headers = request.Headers
-
-        let headersMap =
-            headers.AllKeys
-            |> Seq.map (fun key -> key, headers.[key])
-            |> Map.ofSeq
-
-        let serverVariables = request.ServerVariables
-
-        let serverVariablesMap =
-            serverVariables.AllKeys
-            |> Seq.map (fun key -> key, serverVariables.[key])
-            |> Map.ofSeq
-
-        let getValueFromMap (hds : Map<string, string>) key =
-            let hasKey = hds.ContainsKey key
-            if hasKey then Map.find key hds
-            else String.Empty
-
-        try
-            clientSigVer <- typedefof<BerfController>.Assembly.GetName().Version.ToString()
-        with exn -> ignore()
-        try
-            server <- getValueFromMap serverVariablesMap "SERVER_NAME"
-        with exn -> ignore()
-        try
-            ip <- getValueFromMap serverVariablesMap "LOCAL_ADDR"
-        with exn -> ignore()
-        try
-            authUser <- getValueFromMap serverVariablesMap "AUTH_USER"
-        with exn -> ignore()
-        try
-            logonUser <- getValueFromMap serverVariablesMap "LOGON_USER"
-        with exn -> ignore()
-        try
-            browser <- HttpContext.Current.Request.Browser.Browser
-        with exn -> ignore()
-        try
-            browserVersion <- HttpContext.Current.Request.Browser.Version
-        with exn -> ignore()
-        try
-            userAgentString <- HttpContext.Current.Request.UserAgent
-        with exn -> ignore()
-
-        { HttpSummary.Server = server
-          Browser = browser
-          BrowserVersion = browserVersion
-          controller = controller
-          action = action
-          IP = ip
-          AuthUser = authUser
-          LogonUser = logonUser
-          ClientSigVer = clientSigVer
-          UserAgent = userAgentString }
-
     // helper
     let nullable value = new System.Nullable<_>(value)
 
-    let createClient (berfPacket : Packet) (httpContext : HttpContext) : EntityConnection.ServiceTypes.Client =
-        let cookie = HttpContext.Current.Request.Cookies.["berf"];
-        let berfSessionID = if cookie = null then Guid.Empty else Guid.Parse cookie.Value
+    let createClient (berfPacket : Packet) (httpContext : HttpContext) (berfSessionID: Guid) : EntityConnection.ServiceTypes.Client =
+//        let cookie = HttpContext.Current.Request.Cookies.["berf"].Values.[httpContext.Request.UrlReferrer.ToString()];
+//        let berfSessionID = if cookie = null then Guid.Empty else Guid.Parse cookie
         
         let berfTimer = new EntityConnection.ServiceTypes.Client(
                 ClientID = Guid.NewGuid(),
@@ -114,7 +45,6 @@ type BerfController() =
                 Url = berfPacket.url,
                 Browser = httpContext.Request.Browser.Browser,
                 BrowserVersion = httpContext.Request.Browser.Version,
-
 
                 // Client side
                 connectStart = nullable berfPacket.connectStart,
@@ -147,11 +77,11 @@ type BerfController() =
         berfTimer
 
     member this.Index (model : Packet[]) =
+        let berfSessionID = Guid.NewGuid()
         let cnString = Configuration.WebConfigurationManager.ConnectionStrings.["Berf"].ConnectionString
-        let other = getOther this.HttpContext
         let context = EntityConnection.GetDataContext(cnString)
         let fullContext = context.DataContext
-        let metrics = model |> Seq.map (fun m -> createClient m HttpContext.Current)
+        let metrics = model |> Seq.map (fun m -> createClient m HttpContext.Current berfSessionID)
 
         
         let log = Configuration.WebConfigurationManager.AppSettings.["Berf.Log"]
@@ -162,8 +92,4 @@ type BerfController() =
             if regex.Match((if metric.name = null then metric.Url else metric.name)).Success then context.Client.AddObject metric
         
         fullContext.SaveChanges()
-
-        let cookie = HttpContext.Current.Response.Cookies.["berf"];
-        cookie.Value = Guid.Empty.ToString();
-
         ()

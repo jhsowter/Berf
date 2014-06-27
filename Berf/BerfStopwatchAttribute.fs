@@ -42,11 +42,11 @@ type BerfStopwatchAttribute() =
         let ret = Encoding.Default.GetString(ms.ToArray()).Replace("@" , "")
         ret
 
-    let createCookie(name: string) (value: string) =
+    let createCookie(name: string) (value: string) (url: string)=
         let cookie = new HttpCookie(name)
         cookie.HttpOnly <- false
         cookie.Secure <- false
-        cookie.Value <- value
+        cookie.Values.[url] <- value
         cookie
 
     override u.OnActionExecuting(filterContext : ActionExecutingContext) =
@@ -89,16 +89,11 @@ type BerfStopwatchAttribute() =
         let headers = request.Headers
 
         // get from cookie
-        let cookieValue = if request.Cookies.["berf"] = null then Guid.Empty.ToString() else request.Cookies.["berf"].Value
-        let mutable berfSessionId: Guid = Guid.Empty
-        let isAjaxRequest = (headers.["X-Requested-With"] = "XMLHttpRequest")
-        if (not isAjaxRequest && berfSessionId = Guid.Empty) then
-            berfSessionId <- Guid.NewGuid()
-        else
-            berfSessionId <- Guid.Parse(cookieValue)
+        let isAjaxRequest = request.Headers.["X-Requested-With"] = "XMLHttpRequest"
+        let url = if not isAjaxRequest then request.Url.ToString() else request.UrlReferrer.ToString()
+//        let mutable cookie = request.Cookies.["berf"]
+//        let cookieValue = if cookie = null then Guid.Empty else Guid.Parse(cookie.Values.[url])
 
-        let cookie = createCookie "berf" (berfSessionId.ToString())
-        response.Cookies.Add(cookie)
         let name = httpContext.User.Identity.Name
         let username = (if String.IsNullOrEmpty(httpContext.User.Identity.AuthenticationType) then "<AuthenticationType is empty>" else name)
         let cnString = Configuration.WebConfigurationManager.ConnectionStrings.["Berf"].ConnectionString
@@ -125,7 +120,7 @@ type BerfStopwatchAttribute() =
             ResultEnd = _resultEnd,
             ActionDuration = (float) _actionStopwatch.ElapsedMilliseconds,
             ResultDuration = (float) _resultStopwatch.ElapsedMilliseconds,
-            BerfSessionID = berfSessionId,
+//            BerfSessionID = cookieValue,
             Created = DateTime.UtcNow,
             UserName = username,
             ClientIPAddress = request.UserHostAddress,
@@ -141,5 +136,11 @@ type BerfStopwatchAttribute() =
         if (logRegex.Match(metric.Url).Success) then context.MVC.AddObject metric
 
         context.DataContext.SaveChanges()
+
+//        let cookie = httpContext.Request.Cookies.["berf"]
+//        let referrer = if httpContext.Request.UrlReferrer = null then "" else httpContext.Request.UrlReferrer.ToString()
+//        if not (cookie = null && not (cookie.Values.[referrer] = null)) then 
+//            cookie.Values.[referrer] <- ""
+//            httpContext.Response.Cookies.Add cookie
 
         ()
