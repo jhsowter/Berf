@@ -84,12 +84,14 @@ type BerfController() =
         let metrics = model |> Seq.map (fun m -> createClient m HttpContext.Current berfSessionID)
 
         
+        let disabled = not (String.IsNullOrEmpty(Configuration.WebConfigurationManager.AppSettings.["Berf.Client.Disable"]));
+
         let log = Configuration.WebConfigurationManager.AppSettings.["Berf.Log"]
         let regex = Regex (if log = null then ".*" else log)
 
 
         for metric in metrics do
-            if regex.Match((if metric.name = null then metric.Url else metric.name)).Success then context.Client.AddObject metric
+            if not disabled && regex.Match((if metric.name = null then metric.Url else metric.name)).Success then context.Client.AddObject metric
         
         fullContext.SaveChanges()
         ()

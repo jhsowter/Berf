@@ -99,6 +99,8 @@ type BerfStopwatchAttribute() =
         let cnString = Configuration.WebConfigurationManager.ConnectionStrings.["Berf"].ConnectionString
         let context = EntityConnection.GetDataContext(cnString)
 
+        let disabled = not (String.IsNullOrEmpty(Configuration.WebConfigurationManager.AppSettings.["Berf.MVC.Disable"]));
+
         let m = Configuration.WebConfigurationManager.AppSettings.["Berf.PostLog"];
         let postRegex = Regex (if m = null then "\x00" else m)
         
@@ -133,7 +135,7 @@ type BerfStopwatchAttribute() =
             Url = httpContext.Request.Url.ToString()
             )
 
-        if (logRegex.Match(metric.Url).Success) then context.MVC.AddObject metric
+        if (not disabled && logRegex.Match(metric.Url).Success) then context.MVC.AddObject metric
 
         context.DataContext.SaveChanges()
 
