@@ -34,7 +34,7 @@
                 if (resources.length > 0) {
                     for (var i = 0; i < resources.length; i++) {
                         var resource = resources[i];
-                        resource["Source"] = "Navigation2";
+                        resource["Source"] = "Resource";
                         resource["Url"] = window.location.toString();
                         this.enqueue(resource);
                     }
